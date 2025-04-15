@@ -32,5 +32,8 @@
 #include "Game.h"
 #include "Context.h"
 #include "SwapChain.h"
+#include "RenderPass.h"
 #include "ResourceManager.h"
 #include "SceneManager.h"
+
+#define FRAME_CNT 2

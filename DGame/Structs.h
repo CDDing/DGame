@@ -12,3 +12,11 @@ struct SwapChainSupportDetails {
     std::vector<vk::SurfaceFormatKHR> formats;
     std::vector<vk::PresentModeKHR> presentModes;
 };
+
+namespace DDing {
+    struct Image {
+        vk::raii::Image image;
+        vk::raii::ImageView imageView;
+
+    };
+}

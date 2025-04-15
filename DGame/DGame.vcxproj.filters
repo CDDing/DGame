@@ -16,6 +16,12 @@
     <Filter Include="소스 파일\Manager">
       <UniqueIdentifier>{562a26d2-f68c-40bc-a44f-5f0abc52b1be}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Vulkan">
+      <UniqueIdentifier>{f267bcde-6653-42c6-8345-bbca2c1fdf0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\RenderPass">
+      <UniqueIdentifier>{4db570fb-ab26-42b7-9e13-d97a53a7069a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DGame.cpp">
@@ -27,9 +33,6 @@
     <ClCompile Include="pch.cpp">
       <Filter>헤더 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Context.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="SceneManager.cpp">
       <Filter>소스 파일\Manager</Filter>
     </ClCompile>
@@ -39,8 +42,23 @@
     <ClCompile Include="Structs.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Context.cpp">
+      <Filter>소스 파일\Vulkan</Filter>
+    </ClCompile>
     <ClCompile Include="SwapChain.cpp">
-      <Filter>소스 파일</Filter>
+      <Filter>소스 파일\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="ForwardPass.cpp">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPass.cpp">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderManager.cpp">
+      <Filter>소스 파일\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Pipeline.cpp">
+      <Filter>소스 파일\Vulkan</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -48,9 +66,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="pch.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Context.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Component.h">
@@ -66,7 +81,22 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="SwapChain.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>소스 파일\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Context.h">
+      <Filter>소스 파일\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="ForwardPass.h">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPass.h">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderManager.h">
+      <Filter>소스 파일\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="Pipeline.h">
+      <Filter>소스 파일\Vulkan</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
