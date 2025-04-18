@@ -17,6 +17,7 @@ namespace DDing {
 	{
 	public:
 		static vk::Format DepthFormat;
+		static vk::Format ColorFormat;
 		ForwardPass(Pipeline& pipeline, vk::RenderPass renderPass);
 		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene& scene);
 	protected:
@@ -26,7 +27,7 @@ namespace DDing {
 		DDing::Image depthImage;
 		
 		std::vector<DDing::Image> outputImages;
-		std::vector<vk::raii::Framebuffer> Framebuffers;
+		std::vector<vk::raii::Framebuffer> framebuffers;
 
 	};
 	class DeferredPass :public RenderPass

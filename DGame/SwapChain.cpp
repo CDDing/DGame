@@ -56,6 +56,11 @@ void DDing::SwapChain::create()
     this->extent = extent;
 
     for (size_t i = 0; i < images.size(); i++) {
+
+        context->immediate_submit([&](vk::CommandBuffer commandBuffer) {
+            DDing::Image::setImageLayout(commandBuffer, images[i], vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
+        });
+
         vk::ImageViewCreateInfo createInfo{};
         createInfo.image = images[i];
         createInfo.viewType = vk::ImageViewType::e2D;

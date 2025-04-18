@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Context.h"
-
 DDing::Context::Context(GLFWwindow* window)
 	:
 	window(window),
@@ -11,6 +10,29 @@ DDing::Context::Context(GLFWwindow* window)
 	physical(createPhysicalDevice()),
 	logical(createLogicalDevice())
 {
+	createVmaAllocator();
+	createImmediateResources();
+}
+
+void DDing::Context::immediate_submit(std::function<void(vk::CommandBuffer commandBuffer)>&& function)
+{
+	logical.resetFences(*immediate.fence);
+	immediate.commandBuffer.reset({});
+
+	vk::CommandBufferBeginInfo beginInfo{};
+	beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+	immediate.commandBuffer.begin(beginInfo);
+
+	function(*immediate.commandBuffer);
+
+	immediate.commandBuffer.end();
+
+	vk::SubmitInfo submitInfo{};
+	submitInfo.setCommandBuffers({ *immediate.commandBuffer });
+	GetQueue(QueueType::GRAPHICS).submit(submitInfo, *immediate.fence);
+
+	logical.waitForFences(*immediate.fence, true, UINT64_MAX);
 }
 
 vk::raii::Instance DDing::Context::createInstance()
@@ -130,6 +152,37 @@ vk::raii::Device DDing::Context::createLogicalDevice()
 	return logicalDevice;
 }
 
+void DDing::Context::createVmaAllocator()
+{
+	VmaAllocatorCreateInfo allocatorInfo{};
+	allocatorInfo.physicalDevice = *physical;
+	allocatorInfo.device = *logical;
+	allocatorInfo.instance = *instance;
+	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
+	vmaCreateAllocator(&allocatorInfo, &allocator);
+}
+void DDing::Context::createImmediateResources()
+{
+	vk::FenceCreateInfo fenceInfo{};
+	fenceInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
+	immediate.fence = vk::raii::Fence(logical, fenceInfo);
+
+	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physical, surface);
+	vk::CommandPoolCreateInfo commandPoolInfo{};
+	commandPoolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+	commandPoolInfo.setQueueFamilyIndex(queueFamilyIndices.graphicsFamily.value());
+	immediate.commandPool = logical.createCommandPool(commandPoolInfo);
+
+	vk::CommandBufferAllocateInfo allocInfo{};
+	allocInfo.setCommandBufferCount(1);
+	allocInfo.setCommandPool(immediate.commandPool);
+	allocInfo.setLevel(vk::CommandBufferLevel::ePrimary);
+	immediate.commandBuffer = std::move(logical.allocateCommandBuffers(allocInfo).front());
+}
+DDing::Context::~Context() {
+	vmaDestroyAllocator(allocator);
+}
 bool DDing::Context::checkValidationLayerSupport()
 {
 	std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();

@@ -1,5 +1,9 @@
 #pragma once
-class Scene
-{
-};
+namespace DDing {
+	class Scene
+	{
+	public:
+		Scene() = default;
+	};
+}
 

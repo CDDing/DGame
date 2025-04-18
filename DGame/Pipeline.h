@@ -17,7 +17,7 @@ namespace DDing {
 	class Pipeline
 	{
 	public:
-
+		operator vk::Pipeline() { return pipeline; }
 		vk::raii::PipelineLayout& GetLayout() { return pipelineLayout; };
 	protected:
 		vk::raii::Pipeline pipeline = nullptr;

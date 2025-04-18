@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Game.h"
-
+std::unique_ptr<Game> DGame = std::make_unique<Game>();
 Game::Game()
-    : window(initWindow()), context(window), swapChain(context), render(context,swapChain)
+    : window(initWindow()), context(window), swapChain(context)
 {
 
 }
@@ -12,14 +12,19 @@ Game::~Game()
 }
 
 
+void Game::Init()
+{
+    render.Init();
+}
+
 void Game::Run()
 {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-
         Update();
         Render();
     }
+    context.logical.waitIdle();
 
     glfwDestroyWindow(window);
 
@@ -32,7 +37,7 @@ void Game::Update()
 
 void Game::Render()
 {
-    //render.DrawFrame();
+    render.DrawFrame(scene.GetCurrentScene(), DDing::PassType::Default);
 }
 
 GLFWwindow* Game::initWindow()

@@ -7,6 +7,11 @@ const bool enableValidationLayers = true;
 namespace DDing {
 	class Context
 	{
+		struct Immediate {
+			vk::raii::Fence fence = nullptr;
+			vk::raii::CommandPool commandPool = nullptr;
+			vk::raii::CommandBuffer commandBuffer = nullptr;
+		};
 		friend class SwapChain;
 	private:
 		//For Initailize Order
@@ -20,10 +25,11 @@ namespace DDing {
 		};
 
 		Context(GLFWwindow* window);
-		~Context() {};
+		~Context();
 
 		vk::Queue& GetQueue(QueueType type) { return queues[static_cast<int>(type)]; }
 		vk::Queue& GetQueue(int type) { return queues[type]; }
+		QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device, vk::SurfaceKHR surface);
 
 		vk::raii::Context context;
 		vk::raii::Instance instance;
@@ -31,18 +37,24 @@ namespace DDing {
 		vk::raii::SurfaceKHR surface;
 		vk::raii::PhysicalDevice physical;
 		vk::raii::Device logical;
+		VmaAllocator allocator;
+
+		void immediate_submit(std::function<void(vk::CommandBuffer commandBuffer)>&& function);
 	private:
 		vk::raii::Instance createInstance();
 		vk::raii::DebugUtilsMessengerEXT createDebugMessenger();
 		vk::raii::SurfaceKHR createSurface();
 		vk::raii::PhysicalDevice createPhysicalDevice();
 		vk::raii::Device createLogicalDevice();
+		void createVmaAllocator();
+		void createImmediateResources();
 
 		bool checkValidationLayerSupport();
 		std::vector<const char*> getRequiredExtensions();
 		vk::DebugUtilsMessengerCreateInfoEXT createDebugMessengerInfo();
 		bool isDeviceSuitable(vk::PhysicalDevice device, vk::SurfaceKHR surface);
-		QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device, vk::SurfaceKHR surface);
+		
+		Immediate immediate;
 	};
 
 

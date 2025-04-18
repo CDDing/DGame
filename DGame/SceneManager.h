@@ -1,13 +1,13 @@
 #pragma once
-//#include "Scene.h"
+#include "Scene.h"
 class SceneManager
 {
 public:
-	SceneManager(DDing::Context& context);
+	SceneManager() {};
+	DDing::Scene& GetCurrentScene() { return scene; }
 private:
-
-	//Scene activeScene; //TODO : convert to Vector if add scenes.
-	DDing::Context* context;
+	DDing::Scene scene;
+	
 
 };
 

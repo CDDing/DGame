@@ -4,24 +4,24 @@
 #include "SwapChain.h"
 #include "RenderPass.h"
 #include "Context.h"
-RenderManager::RenderManager(DDing::Context& context, DDing::SwapChain& swapChain) : 
-	context(&context), swapChain(&swapChain)
+void RenderManager::Init()
 {
-	initRenderPasses();
-    initPipelines();
     initRenderPasses();
+    initPipelines();
+    initPasses();
+    initFrameDatas();
 }
 void RenderManager::DrawFrame(DDing::Scene& scene, DDing::PassType passType)
 {
     FrameData& frameData = frameDatas[currentFrame];
 
-    auto resultForFence = context->logical.waitForFences({ *frameData.waitFrame }, vk::True, UINT64_MAX);
-    context->logical.resetFences({ *frameData.waitFrame });
-
-    auto acquireImage = swapChain->Get().acquireNextImage(UINT64_MAX, *frameData.imageAvaiable, VK_NULL_HANDLE);
+    auto resultForFence = DGame->context.logical.waitForFences({ *frameData.waitFrame }, vk::True, UINT64_MAX);
+    
+    auto acquireImage = DGame->swapChain.Get().acquireNextImage(UINT64_MAX, *frameData.imageAvaiable, VK_NULL_HANDLE);
     uint32_t imageIndex = acquireImage.second;
     vk::Result result = acquireImage.first;
     //TODO handle recreateSwapchain
+    DGame->context.logical.resetFences({ *frameData.waitFrame });
 
     frameData.commandBuffer.reset({});
     vk::CommandBufferBeginInfo beginInfo{};
@@ -35,8 +35,8 @@ void RenderManager::DrawFrame(DDing::Scene& scene, DDing::PassType passType)
     
     frameData.commandBuffer.end();
     
-    submitCommandBuffer();
-    presentCommandBuffer();
+    submitCommandBuffer(*frameData.commandBuffer);
+    presentCommandBuffer(*frameData.commandBuffer, imageIndex);
 
     currentFrame = (currentFrame + 1) % FRAME_CNT;
 }
@@ -45,7 +45,7 @@ void RenderManager::initRenderPasses()
     //Default
 	{
         vk::AttachmentDescription colorAttachment{};
-        colorAttachment.format = swapChain->imageFormat;
+        colorAttachment.format = DDing::ForwardPass::ColorFormat;
         colorAttachment.samples = vk::SampleCountFlagBits::e1;
         colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
         colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
@@ -91,7 +91,7 @@ void RenderManager::initRenderPasses()
         renderPassInfo.setAttachments(attachments);
         renderPassInfo.setSubpasses(subpass);
         renderPassInfo.setDependencies(dependency);
-		vk::raii::RenderPass renderPass = context->logical.createRenderPass(renderPassInfo);
+		vk::raii::RenderPass renderPass = DGame->context.logical.createRenderPass(renderPassInfo);
 
         renderPasses.insert({ DDing::RenderPassType::Default,std::move(renderPass) });
 	}
@@ -109,7 +109,7 @@ void RenderManager::initPipelines()
         auto vertShaderCode = loadShader("Shaders/shader.vert.spv");
         vk::ShaderModuleCreateInfo vertCreateInfo{};
         vertCreateInfo.setCode(vertShaderCode);
-        vk::raii::ShaderModule vertShaderModule = context->logical.createShaderModule(vertCreateInfo);
+        vk::raii::ShaderModule vertShaderModule = DGame->context.logical.createShaderModule(vertCreateInfo);
         vk::PipelineShaderStageCreateInfo vertStage{};
         vertStage.setModule(*vertShaderModule);
         vertStage.setPName("main");
@@ -118,7 +118,7 @@ void RenderManager::initPipelines()
         auto fragShaderCode = loadShader("Shaders/shader.frag.spv");
         vk::ShaderModuleCreateInfo fragCreateInfo{};
         fragCreateInfo.setCode(fragShaderCode);
-        vk::raii::ShaderModule fragShaderModule = context->logical.createShaderModule(fragCreateInfo);
+        vk::raii::ShaderModule fragShaderModule = DGame->context.logical.createShaderModule(fragCreateInfo);
         vk::PipelineShaderStageCreateInfo fragStage{};
         fragStage.setModule(*fragShaderModule);
         fragStage.setPName("main");
@@ -146,15 +146,15 @@ void RenderManager::initPipelines()
         pipelineDesc.inputAssembly = inputAssembly;
 
         vk::Viewport viewport{};
-        viewport.setWidth(swapChain->extent.width);
-        viewport.setHeight(swapChain->extent.height);
+        viewport.setWidth(DGame->swapChain.extent.width);
+        viewport.setHeight(DGame->swapChain.extent.height);
         viewport.setX(0.0f);
         viewport.setY(0.0f);
         viewport.setMinDepth(0.0f);
         viewport.setMaxDepth(1.0f);
 
         vk::Rect2D scissor{};
-        scissor.setExtent(swapChain->extent);
+        scissor.setExtent(DGame->swapChain.extent);
 
         vk::PipelineViewportStateCreateInfo viewportState{};
         viewportState.setScissors(scissor);
@@ -221,7 +221,7 @@ void RenderManager::initPipelines()
         pipelineDesc.renderPass = *renderPasses.at(DDing::RenderPassType::Default);
 
 
-        auto pipeline = std::make_unique<DDing::GraphicsPipeline>(*context,pipelineDesc);
+        auto pipeline = std::make_unique<DDing::GraphicsPipeline>(DGame->context,pipelineDesc);
         pipelines.insert({ DDing::PipelineType::Default,std::move(pipeline)});
     }
 }
@@ -230,18 +230,77 @@ void RenderManager::initPasses()
 {
     //ForwardPass
     {
-        //auto forwardPass = std::make_unique<DDing::ForwardPass>(pipelines.at(DDing::PipelineType::Default), *renderPasses.at(DDing::RenderPassType::Default));
+        auto forwardPass = std::make_unique<DDing::ForwardPass>(*pipelines.at(DDing::PipelineType::Default), *renderPasses.at(DDing::RenderPassType::Default));
+        passes.insert({ DDing::PassType::Default,std::move(forwardPass) });
     }
 }
 
 void RenderManager::initDescriptors()
 {
+
 }
 
-void RenderManager::submitCommandBuffer()
+void RenderManager::initFrameDatas()
 {
+    for (int i = 0; i < FRAME_CNT; i++) {
+        FrameData frameData{};
+        {
+            vk::SemaphoreCreateInfo semaphoreInfo{};
+            frameData.imageAvaiable = DGame->context.logical.createSemaphore(semaphoreInfo);
+            frameData.renderFinish = DGame->context.logical.createSemaphore(semaphoreInfo);
+        }
+        {
+            vk::FenceCreateInfo fenceInfo{};
+            fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+            frameData.waitFrame = DGame->context.logical.createFence(fenceInfo);
+        }
+        {
+            vk::CommandPoolCreateInfo commandPoolInfo{};
+            QueueFamilyIndices indices = DGame->context.findQueueFamilies(*DGame->context.physical, *DGame->context.surface);
+            commandPoolInfo.setQueueFamilyIndex(indices.graphicsFamily.value());
+            commandPoolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+            frameData.commandPool = DGame->context.logical.createCommandPool(commandPoolInfo);
+        }
+        {
+            vk::CommandBufferAllocateInfo allocInfo{};
+            allocInfo.setLevel(vk::CommandBufferLevel::ePrimary);
+            allocInfo.setCommandBufferCount(1);
+            allocInfo.setCommandPool(*frameData.commandPool);
+
+            frameData.commandBuffer = std::move(DGame->context.logical.allocateCommandBuffers(allocInfo).front());
+        }
+        frameDatas.push_back(std::move(frameData));
+    }
 }
 
-void RenderManager::presentCommandBuffer()
+void RenderManager::submitCommandBuffer(vk::CommandBuffer commandBuffer)
 {
+    vk::SubmitInfo submitInfo{};
+    FrameData& frameData = frameDatas[currentFrame];
+
+    vk::PipelineStageFlags waitStages[1] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    submitInfo.setCommandBuffers(commandBuffer);
+    submitInfo.setSignalSemaphores(*frameData.renderFinish);
+    submitInfo.setWaitSemaphores(*frameData.imageAvaiable);
+    submitInfo.setWaitDstStageMask(waitStages);
+
+    DGame->context.GetQueue(DDing::Context::QueueType::GRAPHICS).submit(submitInfo, *frameData.waitFrame);
+};
+
+void RenderManager::presentCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
+{
+    vk::PresentInfoKHR presentInfo{};
+    FrameData& frameData = frameDatas[currentFrame];
+
+    presentInfo.setSwapchains(*(DGame->swapChain.Get()));
+    presentInfo.setWaitSemaphores(*frameData.renderFinish);
+    presentInfo.setImageIndices(imageIndex);
+    presentInfo.setPResults(nullptr);
+
+    auto result = DGame->context.GetQueue(DDing::Context::QueueType::PRESENT).presentKHR(presentInfo);
+}
+
+void RenderManager::copyResultToSwapChain(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
+{
+
 }

@@ -1,7 +1,6 @@
 #pragma once
 #include <Windows.h>
 #include <vulkan/vulkan_raii.hpp>
-#include <vma/vk_mem_alloc.h>
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_RADIANS
@@ -15,6 +14,7 @@
 #include <algorithm>
 #include <vector>
 #include <cstring>
+#include <functional>
 #include <cstdlib>
 #include <cstdint>
 #include <limits>

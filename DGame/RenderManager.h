@@ -20,31 +20,34 @@ struct FrameData {
 	vk::raii::Semaphore imageAvaiable = nullptr;
 	vk::raii::Fence waitFrame = nullptr;
 
+	vk::raii::CommandPool commandPool = nullptr;
 	vk::raii::CommandBuffer commandBuffer = nullptr;
 };
 class RenderManager
 {
 public:
-	RenderManager(DDing::Context& context, DDing::SwapChain& swapChain);
+	RenderManager() {};
+	void Init();
 	void DrawFrame(DDing::Scene& scene, DDing::PassType passType);
+
+	uint32_t currentFrame = 0;
 private:
 	void initRenderPasses();
 	void initPipelines();
 	void initPasses();
 	void initDescriptors();
+	void initFrameDatas();
 
-	void submitCommandBuffer();
-	void presentCommandBuffer();
+	void submitCommandBuffer(vk::CommandBuffer commandBuffer);
+	void presentCommandBuffer(vk::CommandBuffer commandBuffer,uint32_t imageIndex);
 
+	void copyResultToSwapChain(vk::CommandBuffer commandBuffer,uint32_t imageIndex);
 	std::unordered_map<DDing::RenderPassType, vk::raii::RenderPass> renderPasses;
 	std::unordered_map<DDing::PipelineType, std::unique_ptr<DDing::Pipeline>> pipelines;
 	std::unordered_map<DDing::PassType, std::unique_ptr<DDing::RenderPass>> passes;
-	std::array<FrameData, FRAME_CNT> frameDatas = {};
+	std::vector<FrameData> frameDatas = {};
 
-	DDing::Context* context;
-	DDing::SwapChain* swapChain;
 	
-	uint8_t currentFrame = 0;
 	//TODO Objects
 };
 

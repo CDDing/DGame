@@ -2,8 +2,7 @@
 #include "pch.h"
 
 int main() {
-
-    Game Game;
-    Game.Run();
+    DGame->Init();
+    DGame->Run();
     return 0;
 }
