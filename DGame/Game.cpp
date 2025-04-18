@@ -2,7 +2,7 @@
 #include "Game.h"
 
 Game::Game()
-    : window(initWindow()), context(window)
+    : window(initWindow()), context(window), swapChain(context), render(context,swapChain)
 {
 
 }
@@ -32,6 +32,7 @@ void Game::Update()
 
 void Game::Render()
 {
+    //render.DrawFrame();
 }
 
 GLFWwindow* Game::initWindow()

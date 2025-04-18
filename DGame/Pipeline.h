@@ -10,6 +10,7 @@ struct PipelineDesc {
 	vk::PipelineColorBlendStateCreateInfo colorBlend;
 	vk::PipelineDepthStencilStateCreateInfo depthStencil;
 	vk::PipelineLayoutCreateInfo layout;
+	vk::RenderPass renderPass;
 };
 std::vector<uint32_t> loadShader(const char* filePath);
 namespace DDing {
@@ -24,6 +25,7 @@ namespace DDing {
 	};
 	class GraphicsPipeline : public Pipeline
 	{
+	public:
 		GraphicsPipeline(DDing::Context& context, PipelineDesc& desc);
 	};
 	class ComputePipeline

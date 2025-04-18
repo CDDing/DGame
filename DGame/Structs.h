@@ -15,8 +15,29 @@ struct SwapChainSupportDetails {
 
 namespace DDing {
     struct Image {
-        vk::raii::Image image;
-        vk::raii::ImageView imageView;
+        Image() = default;
+        //Only movable
+        Image(Image&& other) noexcept {
+            *this = std::move(other);
+        }
+        Image& operator=(Image&& other) noexcept {
+            if (this == &other)
+                return *this;
 
+
+
+            return *this;
+        }
+
+        //non-copyable
+        Image(const Image& other) = delete;
+        Image& operator=(const Image& other) = delete;
+
+        vk::Image image = nullptr;
+        vk::ImageView imageView = nullptr;
+        VmaAllocation allocation;
+    };
+    struct Buffer {
+        vk::Buffer buffer = nullptr;
     };
 }

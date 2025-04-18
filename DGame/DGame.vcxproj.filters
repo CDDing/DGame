@@ -22,6 +22,12 @@
     <Filter Include="소스 파일\RenderPass">
       <UniqueIdentifier>{4db570fb-ab26-42b7-9e13-d97a53a7069a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Drawable">
+      <UniqueIdentifier>{dd0e8d9c-3f0c-4b7d-9d6b-3e9824277672}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Shaders">
+      <UniqueIdentifier>{c2900ea3-b6c1-4015-913f-4b01340f6b52}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DGame.cpp">
@@ -48,9 +54,6 @@
     <ClCompile Include="SwapChain.cpp">
       <Filter>소스 파일\Vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="ForwardPass.cpp">
-      <Filter>소스 파일\RenderPass</Filter>
-    </ClCompile>
     <ClCompile Include="RenderPass.cpp">
       <Filter>소스 파일\RenderPass</Filter>
     </ClCompile>
@@ -59,6 +62,12 @@
     </ClCompile>
     <ClCompile Include="Pipeline.cpp">
       <Filter>소스 파일\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>소스 파일\Drawable</Filter>
+    </ClCompile>
+    <ClCompile Include="Drawable.cpp">
+      <Filter>소스 파일\Drawable</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -86,9 +95,6 @@
     <ClInclude Include="Context.h">
       <Filter>소스 파일\Vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="ForwardPass.h">
-      <Filter>소스 파일\RenderPass</Filter>
-    </ClInclude>
     <ClInclude Include="RenderPass.h">
       <Filter>소스 파일\RenderPass</Filter>
     </ClInclude>
@@ -98,5 +104,19 @@
     <ClInclude Include="Pipeline.h">
       <Filter>소스 파일\Vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="Drawable.h">
+      <Filter>소스 파일\Drawable</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>소스 파일\Drawable</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\shader.frag">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="Shaders\shader.vert">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

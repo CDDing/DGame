@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <vulkan/vulkan_raii.hpp>
+#include <vma/vk_mem_alloc.h>
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_RADIANS
@@ -30,10 +31,4 @@
 
 #include "Structs.h"
 #include "Game.h"
-#include "Context.h"
-#include "SwapChain.h"
 #include "RenderPass.h"
-#include "ResourceManager.h"
-#include "SceneManager.h"
-
-#define FRAME_CNT 2

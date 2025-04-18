@@ -1,7 +1,17 @@
 #pragma once
+#define FRAME_CNT 2
+#include "Pipeline.h"
+#include "RenderPass.h"
 namespace DDing {
-	class Pipeline;
-	class RenderPass;
+	enum class PipelineType {
+		Default,
+	};
+	enum class RenderPassType {
+		Default,
+	};
+	enum class PassType {
+		Default,
+	};
 	class Scene;
 	class SwapChain;
 }
@@ -16,22 +26,25 @@ class RenderManager
 {
 public:
 	RenderManager(DDing::Context& context, DDing::SwapChain& swapChain);
-	void DrawFrame(DDing::Scene& scene, std::string passType);
+	void DrawFrame(DDing::Scene& scene, DDing::PassType passType);
 private:
 	void initRenderPasses();
 	void initPipelines();
+	void initPasses();
 	void initDescriptors();
 
-	std::string currentRenderPass;
-	std::string currentPipeline;
-	std::unordered_map<std::string, vk::raii::RenderPass> renderPasses;
-	std::unordered_map<std::string, DDing::Pipeline> pipelines;
-	std::unordered_map<std::string, DDing::RenderPass> passes;
-	std::array<FrameData, FRAME_CNT> frameData = {};
+	void submitCommandBuffer();
+	void presentCommandBuffer();
+
+	std::unordered_map<DDing::RenderPassType, vk::raii::RenderPass> renderPasses;
+	std::unordered_map<DDing::PipelineType, std::unique_ptr<DDing::Pipeline>> pipelines;
+	std::unordered_map<DDing::PassType, std::unique_ptr<DDing::RenderPass>> passes;
+	std::array<FrameData, FRAME_CNT> frameDatas = {};
 
 	DDing::Context* context;
 	DDing::SwapChain* swapChain;
 	
+	uint8_t currentFrame = 0;
 	//TODO Objects
 };
 

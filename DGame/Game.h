@@ -1,7 +1,7 @@
 #pragma once
-class SceneManager;
-class ResourceManager;
 #include "Context.h"
+#include "SwapChain.h"
+#include "RenderManager.h"
 class Game
 {
 public:
@@ -17,5 +17,7 @@ private:
 	GLFWwindow* initWindow();
 	GLFWwindow* window;
 	DDing::Context context;
+	DDing::SwapChain swapChain;
+	RenderManager render;
 };
 

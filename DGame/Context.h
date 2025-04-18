@@ -7,6 +7,7 @@ const bool enableValidationLayers = true;
 namespace DDing {
 	class Context
 	{
+		friend class SwapChain;
 	private:
 		//For Initailize Order
 		std::vector<vk::Queue> queues;
