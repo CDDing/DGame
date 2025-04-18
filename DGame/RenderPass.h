@@ -8,10 +8,13 @@ namespace DDing {
 		virtual ~RenderPass() = default;
 		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene& scene) = 0;
 		
+		DDing::Image& GetOutputImage();
+
 	protected:
 		RenderPass(Pipeline& pipeline, vk::RenderPass renderPass) : pipeline(&pipeline), renderPass(renderPass) {};
 		Pipeline* pipeline = nullptr;
 		vk::RenderPass renderPass = nullptr;
+		std::vector<DDing::Image> outputImages;
 	};
 	class ForwardPass : public RenderPass
 	{
@@ -26,7 +29,6 @@ namespace DDing {
 		void createFramebuffers();
 		DDing::Image depthImage;
 		
-		std::vector<DDing::Image> outputImages;
 		std::vector<vk::raii::Framebuffer> framebuffers;
 
 	};

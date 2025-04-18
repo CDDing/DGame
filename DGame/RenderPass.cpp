@@ -130,3 +130,8 @@ void DDing::DeferredPass::Render(vk::CommandBuffer commandBuffer, DDing::Scene& 
 {
 
 }
+
+DDing::Image& DDing::RenderPass::GetOutputImage()
+{
+	return outputImages[DGame->render.currentFrame];
+}

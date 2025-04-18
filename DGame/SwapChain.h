@@ -18,13 +18,13 @@ namespace DDing {
         int imgCnt;
         vk::Format imageFormat;
         vk::Extent2D extent;
+        std::vector<vk::Image> images;
     private:    
         vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
         vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
         vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
 
 
-        std::vector<vk::Image> images;
         std::vector<vk::raii::ImageView> imageViews;
         vk::raii::SwapchainKHR swapChain;
         DDing::Context* context;

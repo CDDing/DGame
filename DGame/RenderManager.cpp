@@ -32,11 +32,13 @@ void RenderManager::DrawFrame(DDing::Scene& scene, DDing::PassType passType)
         throw std::runtime_error("RenderPass type not found");
 
     passes[passType]->Render(frameData.commandBuffer, scene);
+    copyResultToSwapChain(*frameData.commandBuffer, imageIndex);
     
     frameData.commandBuffer.end();
     
     submitCommandBuffer(*frameData.commandBuffer);
     presentCommandBuffer(*frameData.commandBuffer, imageIndex);
+
 
     currentFrame = (currentFrame + 1) % FRAME_CNT;
 }
@@ -52,7 +54,7 @@ void RenderManager::initRenderPasses()
         colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
         colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
         colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
-        colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+        colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
         vk::AttachmentDescription depthAttachment{};
         depthAttachment.format = DDing::ForwardPass::DepthFormat;
@@ -302,5 +304,32 @@ void RenderManager::presentCommandBuffer(vk::CommandBuffer commandBuffer, uint32
 
 void RenderManager::copyResultToSwapChain(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
 {
+    DDing::Image::setImageLayout(commandBuffer, DGame->swapChain.images[imageIndex], vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferDstOptimal);
+    
+    //TODO current Pass change not default
+    auto& renderedImage = passes.at(DDing::PassType::Default)->GetOutputImage();
+    renderedImage.setImageLayout(commandBuffer, vk::ImageLayout::eTransferSrcOptimal);
+    
+    
+    vk::ImageSubresourceLayers subresourceLayers{};
+    subresourceLayers.aspectMask = vk::ImageAspectFlagBits::eColor;
+    subresourceLayers.baseArrayLayer = 0;
+    subresourceLayers.layerCount = 1;
+    subresourceLayers.mipLevel = 0;
+    vk::ImageCopy copyRegion{};
+    copyRegion.srcSubresource = subresourceLayers;
+    copyRegion.srcOffset = vk::Offset3D{ 0, 0, 0 };
+    copyRegion.dstSubresource = subresourceLayers;
+    copyRegion.dstOffset = vk::Offset3D{ 0, 0, 0 };
+    copyRegion.extent = vk::Extent3D{ DGame->swapChain.extent.width, DGame->swapChain.extent.height, 1 };
+    commandBuffer.copyImage(renderedImage.image,
+        vk::ImageLayout::eTransferSrcOptimal,
+        DGame->swapChain.images[imageIndex],
+        vk::ImageLayout::eTransferDstOptimal,
+        copyRegion);
+
+    DDing::Image::setImageLayout(commandBuffer, DGame->swapChain.images[imageIndex], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR);
+    renderedImage.setImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal);
+
 
 }
