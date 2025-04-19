@@ -15,6 +15,8 @@ Game::~Game()
 void Game::Init()
 {
     render.Init();
+
+    resource.LoadGLTF("TEMP", "Resources/ABeautifulGame/ABeautifulGame.gltf");
 }
 
 void Game::Run()

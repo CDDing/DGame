@@ -2,6 +2,7 @@
 #include "Context.h"
 #include "SwapChain.h"
 #include "RenderManager.h"
+#include "ResourceManager.h"
 #include "SceneManager.h"
 class Game
 {
@@ -20,6 +21,7 @@ public:
 	DDing::SwapChain swapChain;
 	RenderManager render;
 	SceneManager scene;
+	ResourceManager resource;
 private:
 	GLFWwindow* initWindow();
 };

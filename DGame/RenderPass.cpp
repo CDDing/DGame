@@ -13,7 +13,7 @@ DDing::ForwardPass::ForwardPass(Pipeline& pipeline, vk::RenderPass renderPass)
 void DDing::ForwardPass::Render(vk::CommandBuffer commandBuffer, DDing::Scene& scene)
 {
 	std::array<vk::ClearValue, 2> clearValues{};
-	clearValues[0].color = vk::ClearColorValue{0.0f, 0.0f, 0.0f, 0.0f};
+	clearValues[0].color = vk::ClearColorValue{1.0f, 1.0f, 1.0f, 1.0f};
 	clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
 	vk::RenderPassBeginInfo renderPassbeginInfo{};

@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Structs.h"
+#define VMA_DEBUG_INITIALIZE_ALLOCATIONS 1
+#define VMA_DEBUG_MARGIN 16
+#define VMA_DEBUG_DETECT_CORRUPTION 1
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
 void DDing::Image::setImageLayout(vk::CommandBuffer commandBuffer, vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
@@ -140,7 +143,16 @@ DDing::Image::~Image() {
 	device.destroyImageView(imageView);
 	vmaDestroyImage(DGame->context.allocator, image, allocation);
 }
-
+DDing::Buffer::Buffer(VkBufferCreateInfo bufferCreateInfo, VmaAllocationCreateInfo allocInfo)
+{
+    vmaCreateBuffer(DGame->context.allocator, &bufferCreateInfo, &allocInfo, &buffer, &allocation, nullptr);
+}
+DDing::Buffer::~Buffer(){
+    vmaDestroyBuffer(DGame->context.allocator, buffer, allocation);
+}
+void* DDing::Buffer::GetMappedPtr() {
+    return allocation->GetMappedData();
+}
 void DDing::Image::setImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout newLayout)
 {
     vk::ImageAspectFlags aspectMask;

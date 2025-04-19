@@ -12,6 +12,9 @@ namespace DDing {
 	enum class PassType {
 		Default,
 	};
+	enum class SamplerType {
+
+	};
 	class Scene;
 	class SwapChain;
 }
@@ -37,6 +40,7 @@ private:
 	void initPasses();
 	void initDescriptors();
 	void initFrameDatas();
+	void initSamplers();
 
 	void submitCommandBuffer(vk::CommandBuffer commandBuffer);
 	void presentCommandBuffer(vk::CommandBuffer commandBuffer,uint32_t imageIndex);
@@ -45,6 +49,7 @@ private:
 	std::unordered_map<DDing::RenderPassType, vk::raii::RenderPass> renderPasses;
 	std::unordered_map<DDing::PipelineType, std::unique_ptr<DDing::Pipeline>> pipelines;
 	std::unordered_map<DDing::PassType, std::unique_ptr<DDing::RenderPass>> passes;
+	std::unordered_map<DDing::SamplerType, vk::raii::Sampler> samplers;
 	std::vector<FrameData> frameDatas = {};
 
 	

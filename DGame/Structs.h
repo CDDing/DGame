@@ -57,6 +57,28 @@ namespace DDing {
         uint32_t mipLevel;
     };
     struct Buffer {
-        vk::Buffer buffer = nullptr;
+        Buffer() = default;
+        Buffer(VkBufferCreateInfo bufferCreateInfo, VmaAllocationCreateInfo allocInfo);
+        ~Buffer();
+        //non-copyable
+        Buffer(const Buffer& other) = delete;
+        Buffer& operator=(const Buffer& other) = delete;
+
+        //Only movable
+        Buffer(Buffer&& other) noexcept {
+            *this = std::move(other);
+        };
+        Buffer& operator=(Buffer&& other) noexcept {
+            buffer = other.buffer;
+            allocation = other.allocation;
+
+            other.buffer = nullptr;
+            other.allocation = nullptr;
+            return *this;
+        };
+        void* GetMappedPtr();
+        VkBuffer buffer = nullptr;
+        VmaAllocation allocation;
+
     };
 }
