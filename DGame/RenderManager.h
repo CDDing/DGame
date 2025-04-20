@@ -17,6 +17,7 @@ namespace DDing {
 	};
 	class Scene;
 	class SwapChain;
+	class Pipeline;
 }
 struct FrameData {
 	vk::raii::Semaphore renderFinish = nullptr;
@@ -31,9 +32,12 @@ class RenderManager
 public:
 	RenderManager() {};
 	void Init();
-	void DrawFrame(DDing::Scene& scene, DDing::PassType passType);
+	void DrawFrame(DDing::Scene* scene, DDing::PassType passType);
 
 	uint32_t currentFrame = 0;
+	//TODO
+	DDing::Pipeline* currentPipeline;
+	vk::RenderPass currentRenderPass;
 private:
 	void initRenderPasses();
 	void initPipelines();
@@ -52,7 +56,7 @@ private:
 	std::unordered_map<DDing::SamplerType, vk::raii::Sampler> samplers;
 	std::vector<FrameData> frameDatas = {};
 
-	
-	//TODO Objects
+
+
 };
 

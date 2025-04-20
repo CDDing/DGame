@@ -20,7 +20,6 @@ DDing::Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices)
 			allocInfo.priority = 1.0f;
 
 			vertexBuffer = Buffer(bufferInfo, allocInfo);
-			std::cout << "Å×½ºÆ®";
 			//Get Address
 			vk::BufferDeviceAddressInfo deviceAddressInfo{};
 			deviceAddressInfo.setBuffer(vertexBuffer.buffer);
@@ -30,7 +29,7 @@ DDing::Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices)
 		{
 			vk::BufferCreateInfo bufferInfo{};
 			bufferInfo.setSize(indexBufferSize);
-			bufferInfo.setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress);
+			bufferInfo.setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eIndexBuffer);
 
 			VmaAllocationCreateInfo allocInfo{};
 			allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
@@ -74,4 +73,10 @@ DDing::Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices)
 			commandBuffer.copyBuffer(staging.buffer, indexBuffer.buffer, indexCopy);
 			});
 	}
+}
+
+void DDing::Mesh::Draw(vk::CommandBuffer commandBuffer)
+{
+	commandBuffer.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint32);
+	commandBuffer.drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 }

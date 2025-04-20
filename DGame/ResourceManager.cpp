@@ -7,6 +7,7 @@
 #include "tiny_gltf.h"
 #include "GameObject.h"
 #include "Transform.h"
+#include "MeshRenderer.h"
 std::vector<std::unique_ptr<DDing::Scene>> ResourceManager::LoadGLTF(const std::string name, const std::string path)
 {
     tinygltf::Model model;
@@ -30,10 +31,11 @@ std::vector<std::unique_ptr<DDing::Scene>> ResourceManager::LoadGLTF(const std::
 
 
     }
-
+    MeshContainer container;
     for (const auto& mesh : model.meshes) {
-        LoadMesh(mesh.name, mesh, model);
+        LoadMesh(container, mesh, model);
     }
+    meshes.push_back(std::move(container));
 
     std::vector<std::unique_ptr<DDing::Scene>> result;
     for (auto& scene : model.scenes) {
@@ -41,9 +43,13 @@ std::vector<std::unique_ptr<DDing::Scene>> ResourceManager::LoadGLTF(const std::
         auto newScene = std::make_unique<DDing::Scene>();
 
         for (auto nodeIndex : scene.nodes) {
-            auto rootNode = CreateNodeRecursive(model, nodeIndex, nullptr);
-
-            newScene->AddRootNode(std::move(rootNode));
+            auto rootNode = CreateNodeRecursive(newScene, model, nodeIndex, nullptr);
+            
+            //Note Order
+            newScene->AddRootNode(rootNode.get());
+            newScene->AddNode(rootNode);
+            
+            
         }
 
 
@@ -55,10 +61,9 @@ std::vector<std::unique_ptr<DDing::Scene>> ResourceManager::LoadGLTF(const std::
 }
 
 
-void ResourceManager::LoadMesh(const std::string& name, const tinygltf::Mesh& mesh, const tinygltf::Model& model)
+void ResourceManager::LoadMesh(MeshContainer& meshContainer, const tinygltf::Mesh& mesh, const tinygltf::Model& model)
 {
-    if (meshes.find(name)!=meshes.end())
-        return;
+
 
 
     std::vector<DDing::Vertex> vertices;
@@ -133,10 +138,10 @@ void ResourceManager::LoadMesh(const std::string& name, const tinygltf::Mesh& me
     }
 
     auto newMesh = std::make_unique<DDing::Mesh>(vertices,indices);
-    meshes[name] = std::move(newMesh);
+    meshContainer.push_back(std::move(newMesh));
 }
 
-std::unique_ptr<DDing::GameObject> ResourceManager::CreateNodeRecursive(const tinygltf::Model& model, int nodeIndex, DDing::GameObject* parent)
+std::unique_ptr<DDing::GameObject> ResourceManager::CreateNodeRecursive(std::unique_ptr<DDing::Scene>& scene, const tinygltf::Model& model, int nodeIndex, DDing::GameObject* parent)
 {
     const auto& node = model.nodes[nodeIndex];
     auto go = std::make_unique<DDing::GameObject>();
@@ -173,11 +178,16 @@ std::unique_ptr<DDing::GameObject> ResourceManager::CreateNodeRecursive(const ti
         parentTransform->AddChild(go->GetComponent<DDing::Transform>());
     }
 
+    if (node.mesh >= 0) {
+        auto meshRenderer = go->AddComponent<DDing::MeshRenderer>();
+        //TODO fix needed
+        meshRenderer->SetMesh(meshes[meshes.size() - 1][node.mesh].get());
+    }
+
     for (int child : node.children) {
-        auto childNode = CreateNodeRecursive(model, child, go.get());
+        auto childNode = CreateNodeRecursive(scene,model, child, go.get());
         
-        auto childTransform = childNode->GetComponent<DDing::Transform>();
-        childTransform->SetParent(go->GetComponent<DDing::Transform>());
+        scene->AddNode(childNode);
     
     }
 

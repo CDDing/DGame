@@ -11,7 +11,7 @@ void RenderManager::Init()
     initPasses();
     initFrameDatas();
 }
-void RenderManager::DrawFrame(DDing::Scene& scene, DDing::PassType passType)
+void RenderManager::DrawFrame(DDing::Scene* scene, DDing::PassType passType)
 {
     FrameData& frameData = frameDatas[currentFrame];
 
@@ -216,7 +216,11 @@ void RenderManager::initPipelines()
         //TODO
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.setSetLayouts({});
-        pipelineLayoutInfo.setPushConstantRanges({});
+        vk::PushConstantRange pushConstantRange{};
+        pushConstantRange.setOffset(0);
+        pushConstantRange.setSize(sizeof(DDing::ForwardPass::PushConstant));
+        pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+        pipelineLayoutInfo.setPushConstantRanges({pushConstantRange});
         pipelineDesc.layout = pipelineLayoutInfo;
 
         //TODO
@@ -233,7 +237,13 @@ void RenderManager::initPasses()
     //ForwardPass
     {
         auto forwardPass = std::make_unique<DDing::ForwardPass>(*pipelines.at(DDing::PipelineType::Default), *renderPasses.at(DDing::RenderPassType::Default));
+
+        //TODO currentPipeline change
+        currentPipeline = pipelines.at(DDing::PipelineType::Default).get();
+        currentRenderPass = *renderPasses.at(DDing::RenderPassType::Default);
+
         passes.insert({ DDing::PassType::Default,std::move(forwardPass) });
+
     }
 }
 

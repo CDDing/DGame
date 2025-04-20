@@ -10,7 +10,7 @@ DDing::ForwardPass::ForwardPass(Pipeline& pipeline, vk::RenderPass renderPass)
 	createFramebuffers();
 }
 
-void DDing::ForwardPass::Render(vk::CommandBuffer commandBuffer, DDing::Scene& scene)
+void DDing::ForwardPass::Render(vk::CommandBuffer commandBuffer, DDing::Scene* scene)
 {
 	std::array<vk::ClearValue, 2> clearValues{};
 	clearValues[0].color = vk::ClearColorValue{1.0f, 1.0f, 1.0f, 1.0f};
@@ -40,7 +40,14 @@ void DDing::ForwardPass::Render(vk::CommandBuffer commandBuffer, DDing::Scene& s
 	commandBuffer.beginRenderPass(renderPassbeginInfo, vk::SubpassContents::eInline);
 	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
 	
-	commandBuffer.draw(3, 1, 0, 0);
+	//commandBuffer.draw(3, 1, 0, 0);
+
+	for (auto& rootNode : scene->GetRootNodes()) {
+		auto node = rootNode;
+		node->Draw(commandBuffer);
+
+	}
+
 
 	commandBuffer.endRenderPass();
 
@@ -126,7 +133,7 @@ DDing::DeferredPass::DeferredPass(Pipeline& pipeline, vk::RenderPass renderPass)
 
 }
 
-void DDing::DeferredPass::Render(vk::CommandBuffer commandBuffer, DDing::Scene& scene)
+void DDing::DeferredPass::Render(vk::CommandBuffer commandBuffer, DDing::Scene* scene)
 {
 
 }

@@ -14,6 +14,7 @@ namespace DDing {
 			std::type_index index(typeid(T));
 			auto component = std::make_unique<T>(std::forward<Args>(args)...);
 			T* ptr = component.get();
+			component->SetGameObject(this);
 			components[index] = std::move(component);
 			return ptr;
 		}
@@ -27,6 +28,8 @@ namespace DDing {
 			}
 			return nullptr;
 		}
+
+		void Draw(vk::CommandBuffer commandBuffer);
 
 	protected:
 		std::unordered_map<std::type_index, std::unique_ptr<Component>> components;

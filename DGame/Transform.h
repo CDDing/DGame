@@ -22,8 +22,13 @@ namespace DDing {
 		virtual void Update() override;
 
 		bool HasParent() { return parent != nullptr; }
-		void SetParent(Transform* parent) { this->parent = parent; }
-		void AddChild(Transform* child) { children.push_back(child); }
+		/*void SetParent(Transform* parent) { 
+			this->parent = parent; 
+		}*/
+		void AddChild(Transform* child) { 
+			children.push_back(child);
+			child->parent = this;
+		}
 		Transform* GetParent() { return parent; }
 		const std::vector<Transform*>& GetChildren() { return children; }
 	private:

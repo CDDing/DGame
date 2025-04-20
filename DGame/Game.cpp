@@ -16,7 +16,10 @@ void Game::Init()
 {
     render.Init();
 
-    resource.LoadGLTF("TEMP", "Resources/ABeautifulGame/ABeautifulGame.gltf");
+    auto scenes = resource.LoadGLTF("TEMP", "Resources/ABeautifulGame/ABeautifulGame.gltf");
+    for (auto & s : scenes) {
+        scene.AddScene(std::move(s));
+    }
 }
 
 void Game::Run()
@@ -39,7 +42,7 @@ void Game::Update()
 
 void Game::Render()
 {
-    render.DrawFrame(scene.GetCurrentScene(), DDing::PassType::Default);
+    render.DrawFrame(scene.scenes[0].get(), DDing::PassType::Default);
 }
 
 GLFWwindow* Game::initWindow()

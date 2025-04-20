@@ -7,13 +7,16 @@ namespace DDing {
 	public:
 		Scene();
 
-		void AddRootNode(std::unique_ptr<DDing::GameObject> rootNode);
+		void AddRootNode(DDing::GameObject* rootNode);
+		void AddNode(std::unique_ptr<DDing::GameObject>& node);
+		auto& GetRootNodes() { return rootNodes; }
 		void Update();
 
 	private:
 		std::unique_ptr<DDing::GameObject> camera;
 
-		std::vector<std::unique_ptr<DDing::GameObject>> rootNodes;
+		std::vector<std::unique_ptr<DDing::GameObject>> nodes;
+		std::vector<DDing::GameObject*> rootNodes;
 	};
 }
 

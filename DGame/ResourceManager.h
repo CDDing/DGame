@@ -11,8 +11,11 @@ public:
 	std::vector<std::unique_ptr<DDing::Scene>> LoadGLTF(const std::string name, const std::string path);
 
 private:
-	void LoadMesh(const std::string& name, const tinygltf::Mesh& mesh, const tinygltf::Model& model);
-	std::unique_ptr<DDing::GameObject> CreateNodeRecursive(const tinygltf::Model& model, int nodeIndex, DDing::GameObject* parent);
-	std::unordered_map<std::string, std::unique_ptr<DDing::Mesh>> meshes;
+	using MeshContainer = std::vector<std::unique_ptr<DDing::Mesh>>;
+
+	void LoadMesh(MeshContainer& meshContainer, const tinygltf::Mesh& mesh, const tinygltf::Model& model);
+	std::unique_ptr<DDing::GameObject> CreateNodeRecursive(std::unique_ptr<DDing::Scene>& scene, const tinygltf::Model& model, int nodeIndex, DDing::GameObject* parent);
+	
+	std::vector<MeshContainer> meshes;
 };
 

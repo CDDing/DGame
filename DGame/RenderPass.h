@@ -6,7 +6,7 @@ namespace DDing {
 	public:
 		RenderPass() {};
 		virtual ~RenderPass() = default;
-		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene& scene) = 0;
+		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene* scene) = 0;
 		
 		DDing::Image& GetOutputImage();
 
@@ -19,10 +19,14 @@ namespace DDing {
 	class ForwardPass : public RenderPass
 	{
 	public:
+		struct PushConstant {
+			glm::mat4 transformMatrix;
+			vk::DeviceAddress deviceAddress;
+		};
 		static vk::Format DepthFormat;
 		static vk::Format ColorFormat;
 		ForwardPass(Pipeline& pipeline, vk::RenderPass renderPass);
-		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene& scene);
+		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene* scene);
 	protected:
 		void createDepthImage();
 		void createOutputImages();
@@ -36,7 +40,7 @@ namespace DDing {
 	{
 	public:
 		DeferredPass(Pipeline& pipeline, vk::RenderPass renderPass);
-		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene& scene);
+		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene* scene);
 	};
 }
 

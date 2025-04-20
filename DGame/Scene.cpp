@@ -5,7 +5,20 @@ DDing::Scene::Scene() {
 	camera->AddComponent<Camera>();
 }
 
-void DDing::Scene::AddRootNode(std::unique_ptr<DDing::GameObject> rootNode)
+void DDing::Scene::AddRootNode(DDing::GameObject* rootNode)
 {
-	rootNodes.push_back(std::move(rootNode));
+	rootNodes.push_back(rootNode);
+}
+
+void DDing::Scene::AddNode(std::unique_ptr<DDing::GameObject>& node)
+{
+	nodes.push_back(std::move(node));
+}
+
+
+void DDing::Scene::Update()
+{
+	for (auto& node : rootNodes) {
+		node->Update();
+	}
 }
