@@ -18,6 +18,7 @@ void DDing::Scene::AddNode(std::unique_ptr<DDing::GameObject>& node)
 
 void DDing::Scene::Update()
 {
+	camera->Update();
 	for (auto& node : rootNodes) {
 		node->Update();
 	}

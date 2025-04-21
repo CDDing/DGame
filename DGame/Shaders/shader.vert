@@ -3,6 +3,13 @@
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
+layout(set = 0, binding = 0) uniform GlobalBuffer {
+    mat4 view;
+    mat4 projection;
+    vec3 cameraPosition;
+    float time;
+} ubo;
+
 layout(push_constant) uniform PushConstant {
     mat4 modelMatrix;
     uint64_t vertexAddress;
@@ -26,5 +33,5 @@ void main() {
     VertexBuffer vb = VertexBuffer(pushConst.vertexAddress);
     Vertex v = vb.vertices[gl_VertexIndex];
 
-    gl_Position = pushConst.modelMatrix * vec4(v.position,1.0);
+    gl_Position = ubo.projection * ubo.view * pushConst.modelMatrix * vec4(v.position,1.0);
 }

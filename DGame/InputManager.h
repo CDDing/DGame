@@ -1,4 +1,7 @@
 #pragma once
+namespace DDing {
+	class Camera;
+}
 class InputManager
 {
 public:
@@ -19,6 +22,7 @@ private:
 	vk::raii::DescriptorSetLayout descriptorSetLayout = nullptr;
 	std::vector<vk::raii::Framebuffer> swapChainFrameBuffers;
 
+	friend class DDing::Camera;
 	DDing::GameObject* selectedObject = nullptr;
 	static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static bool keyPressed[256];

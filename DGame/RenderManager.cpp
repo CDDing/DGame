@@ -6,10 +6,10 @@
 #include "Context.h"
 void RenderManager::Init()
 {
+    initFrameDatas();
     initRenderPasses();
     initPipelines();
     initPasses();
-    initFrameDatas();
 }
 void RenderManager::DrawFrame(DDing::Scene* scene, DDing::PassType passType)
 {
@@ -26,6 +26,7 @@ void RenderManager::DrawFrame(DDing::Scene* scene, DDing::PassType passType)
     frameData.commandBuffer.reset({});
     vk::CommandBufferBeginInfo beginInfo{};
     frameData.commandBuffer.begin(beginInfo);
+    copyGlobalBuffer(*frameData.commandBuffer);
 
     auto passIt = passes.find(passType);
     if (passIt == passes.end())
@@ -218,7 +219,7 @@ void RenderManager::initPipelines()
 
         //TODO
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.setSetLayouts({});
+        pipelineLayoutInfo.setSetLayouts({*globalSetLayout});
         vk::PushConstantRange pushConstantRange{};
         pushConstantRange.setOffset(0);
         pushConstantRange.setSize(sizeof(DDing::ForwardPass::PushConstant));
@@ -250,9 +251,17 @@ void RenderManager::initPasses()
     }
 }
 
-void RenderManager::initDescriptors()
+void RenderManager::initGlobalDescriptorSetLayout()
 {
+    vk::DescriptorSetLayoutBinding layoutBinding{};
+    layoutBinding.binding = 0;
+    layoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+    layoutBinding.descriptorCount = 1;
+    layoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
 
+    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.setBindings(layoutBinding);
+    globalSetLayout = DGame->context.logical.createDescriptorSetLayout(layoutInfo);
 }
 
 void RenderManager::initFrameDatas()
@@ -283,6 +292,69 @@ void RenderManager::initFrameDatas()
             allocInfo.setCommandPool(*frameData.commandPool);
 
             frameData.commandBuffer = std::move(DGame->context.logical.allocateCommandBuffers(allocInfo).front());
+        }
+        //Descriptor Sets, buffers For Global Variables
+        {
+            initGlobalDescriptorSetLayout();
+            {
+                vk::DescriptorPoolSize poolSize{};
+                poolSize.setType(vk::DescriptorType::eUniformBuffer);
+                poolSize.setDescriptorCount(FRAME_CNT);
+
+                vk::DescriptorPoolCreateInfo poolInfo{};
+                poolInfo.setMaxSets(FRAME_CNT);
+                poolInfo.setPoolSizes(poolSize);
+                poolInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
+
+                frameData.descriptorPool = DGame->context.logical.createDescriptorPool(poolInfo);
+            }
+            {
+                vk::DescriptorSetAllocateInfo allocInfo{};
+                allocInfo.setDescriptorPool(*frameData.descriptorPool);
+                allocInfo.setDescriptorSetCount(FRAME_CNT);
+                allocInfo.setSetLayouts(*globalSetLayout);
+
+                frameData.descriptorSet = std::move(DGame->context.logical.allocateDescriptorSets(allocInfo).front());
+            }
+            {
+                vk::BufferCreateInfo bufferInfo{};
+                bufferInfo.setSize(sizeof(GlobalBuffer));
+                bufferInfo.setUsage(vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst);
+
+                VmaAllocationCreateInfo allocInfo{};
+                allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+                allocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+                allocInfo.priority = 1.0f;
+
+                frameData.globalUniformBuffer = DDing::Buffer(bufferInfo, allocInfo);
+            }
+            {
+                vk::BufferCreateInfo stagingInfo{ };
+                stagingInfo.setSize(sizeof(GlobalBuffer));
+                stagingInfo.setUsage(vk::BufferUsageFlagBits::eTransferSrc);
+
+                VmaAllocationCreateInfo allocInfo{};
+                allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+                allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+                frameData.globalStagingBuffer = DDing::Buffer(stagingInfo, allocInfo);
+            }
+            {
+                vk::DescriptorBufferInfo bufferInfo{};
+                bufferInfo.buffer = frameData.globalUniformBuffer.buffer;
+                bufferInfo.range = sizeof(GlobalBuffer);
+                bufferInfo.offset = 0;
+
+                vk::WriteDescriptorSet descriptorWrite{};
+                descriptorWrite.dstSet = frameData.descriptorSet;
+                descriptorWrite.dstBinding = 0;
+                descriptorWrite.dstArrayElement = 0;
+                descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
+                descriptorWrite.descriptorCount = 1;
+                descriptorWrite.pBufferInfo = &bufferInfo;
+
+                DGame->context.logical.updateDescriptorSets(descriptorWrite, nullptr);
+            }
         }
         frameDatas.push_back(std::move(frameData));
     }
@@ -346,4 +418,15 @@ void RenderManager::copyResultToSwapChain(vk::CommandBuffer commandBuffer, uint3
     renderedImage.setImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal);
 
 
+}
+
+void RenderManager::copyGlobalBuffer(vk::CommandBuffer commandBuffer)
+{
+    FrameData& frameData = frameDatas[currentFrame];
+    VkBufferCopy copyRegion{};
+    copyRegion.dstOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size = sizeof(GlobalBuffer);
+
+    vkCmdCopyBuffer(commandBuffer, frameData.globalStagingBuffer.buffer, frameData.globalUniformBuffer.buffer, 1, &copyRegion);
 }

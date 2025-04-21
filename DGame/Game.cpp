@@ -40,6 +40,7 @@ void Game::Run()
 void Game::Update()
 {
     input.Update();
+    scene.Update();
 }
 
 void Game::Render()

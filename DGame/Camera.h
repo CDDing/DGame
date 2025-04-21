@@ -12,6 +12,8 @@ namespace DDing {
 
 	private:
 		void UpdateMatrix();
+		void UploadToStaging();
+		void UpdatePosition();
 	};
 }
 

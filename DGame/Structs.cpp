@@ -151,7 +151,10 @@ DDing::Buffer::~Buffer(){
     vmaDestroyBuffer(DGame->context.allocator, buffer, allocation);
 }
 void* DDing::Buffer::GetMappedPtr() {
-    return allocation->GetMappedData();
+    if(allocation)
+        return allocation->GetMappedData();
+
+    return nullptr;
 }
 void DDing::Image::setImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout newLayout)
 {

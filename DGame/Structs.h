@@ -14,6 +14,13 @@ struct SwapChainSupportDetails {
     std::vector<vk::PresentModeKHR> presentModes;
 };
 
+struct alignas(16) GlobalBuffer {
+    glm::mat4 view;
+    glm::mat4 projection;
+    glm::vec3 cameraPosition;
+    float time;
+};
+
 namespace DDing {
     class Context;
     struct Image {
