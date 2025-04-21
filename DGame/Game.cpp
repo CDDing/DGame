@@ -16,11 +16,15 @@ void Game::Init()
 {
     render.Init();
     input.Init();
-    auto scenes = resource.LoadGLTF("TEMP", "Resources/ABeautifulGame/ABeautifulGame.gltf");
-    scene.currentScene = scenes[0].get();
-    for (auto & s : scenes) {
-        scene.AddScene(std::move(s));
-    }
+
+    //TODO integrate with GUI when load GLTF
+    resource.Init();
+
+    auto tempScene = std::make_unique<DDing::Scene>();
+    tempScene->LoadSceneFromGLTF(resource.gltfs[0]);
+    scene.currentScene = tempScene.get();
+    scene.AddScene(std::move(tempScene));
+    
 }
 
 void Game::Run()

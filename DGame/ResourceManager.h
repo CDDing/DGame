@@ -1,21 +1,31 @@
 #pragma once
+#include "Mesh.h"
+#include "tiny_gltf.h"
 namespace DDing {
 	class Texture;
 	class GameObject;
 }
-#include "Mesh.h"
-#include "tiny_gltf.h"
+struct LoadedGLTF {
+	std::vector<std::unique_ptr<DDing::Mesh>> meshes;
+	std::vector<std::unique_ptr<DDing::Image>> images;
+	std::vector<std::unique_ptr<DDing::GameObject>> nodes;
+	std::vector<DDing::GameObject*> rootNodes;
+
+	LoadedGLTF(const std::string path);
+private:
+
+	void LoadImages(const tinygltf::Model& model);
+	void LoadMeshes(const tinygltf::Model& model);
+	void LoadNodes(const tinygltf::Model& model);
+};
 class ResourceManager
 {
 public:
-	std::vector<std::unique_ptr<DDing::Scene>> LoadGLTF(const std::string name, const std::string path);
+	void Init();
 
+	//Temp
+	std::vector<LoadedGLTF> gltfs;
 private:
-	using MeshContainer = std::vector<std::unique_ptr<DDing::Mesh>>;
 
-	void LoadMesh(MeshContainer& meshContainer, const tinygltf::Mesh& mesh, const tinygltf::Model& model);
-	std::unique_ptr<DDing::GameObject> CreateNodeRecursive(std::unique_ptr<DDing::Scene>& scene, const tinygltf::Model& model, int nodeIndex, DDing::GameObject* parent);
-	
-	std::vector<MeshContainer> meshes;
 };
 

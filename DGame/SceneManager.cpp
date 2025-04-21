@@ -3,5 +3,6 @@
 
 void SceneManager::Update()
 {
-	currentScene->Update();
+	if(currentScene)
+		currentScene->Update();
 }

@@ -5,7 +5,7 @@ glm::mat4 DDing::Camera::View = glm::mat4();
 glm::mat4 DDing::Camera::Projection = glm::mat4();
 void DDing::Camera::Update()
 {
-	UpdatePosition();
+	UpdateTransform();
 	UpdateMatrix();
 	UploadToStaging();
 }
@@ -54,4 +54,50 @@ void DDing::Camera::UpdatePosition()
 		auto movedPosition = transform->GetPosition() + glm::normalize(move) * 0.01f;
 		transform->SetPosition(movedPosition);
 	}
+}
+
+void DDing::Camera::UpdateTransform()
+{
+	UpdatePosition();
+	UpdateRotation();
+}
+
+void DDing::Camera::UpdateRotation()
+{
+	static bool wasRightMouseDown = false;
+	static glm::vec2 lastMouse = { InputManager::mouseX, InputManager::mouseY };
+
+	bool rightMouseDown = InputManager::mouseButtons[GLFW_MOUSE_BUTTON_RIGHT];
+
+	if (!rightMouseDown)
+	{
+		wasRightMouseDown = false;
+		return;
+	}
+
+	glm::vec2 currentMouse = { InputManager::mouseX, InputManager::mouseY };
+
+	if (!wasRightMouseDown)
+	{
+		// 첫 클릭 시점에서 lastMouse 초기화
+		lastMouse = currentMouse;
+		wasRightMouseDown = true;
+		return;
+	}
+
+	glm::vec2 delta = currentMouse - lastMouse;
+	float sensitivity = 0.1f;
+	float yawDelta = delta.x * sensitivity;
+	float pitchDelta = -delta.y * sensitivity;
+
+	auto transform = gameObject->GetComponent<DDing::Transform>();
+	glm::vec3 euler = glm::eulerAngles(transform->GetRotation());
+	euler.y += glm::radians(yawDelta);
+	euler.x += glm::radians(pitchDelta);
+
+	euler.x = glm::clamp(euler.x, glm::radians(-89.0f), glm::radians(89.0f));
+
+	transform->SetRotation(glm::quat(euler));
+
+	lastMouse = currentMouse;
 }

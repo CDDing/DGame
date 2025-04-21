@@ -14,6 +14,8 @@ namespace DDing {
 		void UpdateMatrix();
 		void UploadToStaging();
 		void UpdatePosition();
+		void UpdateTransform();
+		void UpdateRotation();
 	};
 }
 

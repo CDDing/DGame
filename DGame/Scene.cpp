@@ -1,8 +1,16 @@
 #include "pch.h"
 #include "Scene.h"
+#include "ResourceManager.h"
 DDing::Scene::Scene() {
 	camera = std::make_unique<DDing::GameObject>();
 	camera->AddComponent<Camera>();
+}
+
+void DDing::Scene::LoadSceneFromGLTF(const LoadedGLTF& gltf)
+{
+	for (const auto& rootNode : gltf.rootNodes) {
+		rootNodes.push_back(rootNode);
+	}
 }
 
 void DDing::Scene::AddRootNode(DDing::GameObject* rootNode)

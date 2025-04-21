@@ -15,7 +15,7 @@ namespace DDing {
 		void SetPosition(const glm::vec3& worldPosition) { position = worldPosition; UpdateLocalTransform(); }
 		glm::mat4 GetTransformMatrix() { return localTransform; }
 
-		glm::vec3 GetRight() { return glm::normalize(rotation * glm::vec3(1, 0, 0)); }
+		glm::vec3 GetRight() { return glm::normalize(rotation * glm::vec3(-1, 0, 0)); }
 		glm::vec3 GetUp() { return glm::normalize(rotation * glm::vec3(0, 1, 0)); }
 		glm::vec3 GetLook() { return glm::normalize(rotation * glm::vec3(0,0,-1)); }
 

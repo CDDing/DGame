@@ -23,8 +23,17 @@ private:
 	std::vector<vk::raii::Framebuffer> swapChainFrameBuffers;
 
 	friend class DDing::Camera;
+
+	//for keyboard
 	DDing::GameObject* selectedObject = nullptr;
 	static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static bool keyPressed[256];
+
+	//for mouse
+	static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
+	static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+
+	static double mouseX, mouseY;
+	static bool mouseButtons[3]; // 0: Left, 1: Right, 2: Middle
 };
 

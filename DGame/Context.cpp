@@ -112,6 +112,9 @@ vk::raii::Device DDing::Context::createLogicalDevice()
 	//For RT
 	vk::PhysicalDeviceDescriptorIndexingFeaturesEXT pddifEXT;
 	pddifEXT.runtimeDescriptorArray = VK_TRUE;
+	pddifEXT.descriptorBindingPartiallyBound = vk::True;
+	pddifEXT.descriptorBindingVariableDescriptorCount = vk::True;
+	pddifEXT.shaderSampledImageArrayNonUniformIndexing = vk::True;
 
 	vk::PhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
 	rayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;  // 기능 활성화

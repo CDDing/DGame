@@ -5,7 +5,9 @@
 #include "GameObject.h"
 #include "Transform.h"
 
-bool InputManager::keyPressed[256] = {false};
+bool InputManager::keyPressed[256] = { false };
+bool InputManager::mouseButtons[3] = { false };
+double InputManager::mouseX = 0.0f, InputManager::mouseY = 0.0f;
 //Shader From ImGui Example
 static uint32_t __glsl_shader_vert_spv[] =
 {
@@ -151,7 +153,9 @@ void InputManager::Init()
 		ImGui_ImplVulkan_Init(&initInfo);
 	}
 	{
-		glfwSetKeyCallback(DGame->context.window, KeyCallback);
+		glfwSetKeyCallback(DGame->context.window, KeyCallback);/*
+		glfwSetMouseButtonCallback(DGame->context.window, MouseButtonCallback);
+		glfwSetCursorPosCallback(DGame->context.window, CursorPosCallback);*/
 	}
 }
 
@@ -385,4 +389,16 @@ void InputManager::DrawSceneHierarchy(DDing::GameObject* gameObject)
 void InputManager::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	keyPressed[key] = action;
+}
+
+void InputManager::CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
+{
+	mouseX = xpos;
+	mouseY = ypos;
+}
+
+void InputManager::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button < 0 || button >= 3) return;
+	mouseButtons[button] = (action == GLFW_PRESS);
 }
