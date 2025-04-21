@@ -102,15 +102,6 @@
     <ClCompile Include="GameObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Texture.cpp">
-      <Filter>소스 파일\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="Node.cpp">
-      <Filter>소스 파일\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="Material.cpp">
-      <Filter>소스 파일\Resource</Filter>
-    </ClCompile>
     <ClCompile Include="Mesh.cpp">
       <Filter>소스 파일\Resource</Filter>
     </ClCompile>
@@ -194,16 +185,7 @@
     <ClInclude Include="GameObject.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Texture.h">
-      <Filter>소스 파일\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Node.h">
-      <Filter>소스 파일\Resource</Filter>
-    </ClInclude>
     <ClInclude Include="Mesh.h">
-      <Filter>소스 파일\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Material.h">
       <Filter>소스 파일\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Transform.h">

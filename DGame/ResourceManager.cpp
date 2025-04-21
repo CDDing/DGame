@@ -27,6 +27,9 @@ LoadedGLTF::LoadedGLTF(const std::string path)
         throw std::runtime_error("Failed to Load GLTF!");
 
     LoadImages(model);
+    LoadSamplers(model);
+    LoadTextures(model);
+    LoadMaterials(model);
     LoadMeshes(model);
     LoadNodes(model);
     
@@ -232,6 +235,146 @@ void LoadedGLTF::LoadNodes(const tinygltf::Model& model)
     }
     for (auto node : model.scenes[model.defaultScene].nodes)
         rootNodes.push_back(nodes[node].get());
+}
+
+void LoadedGLTF::LoadTextures(const tinygltf::Model& model)
+{
+    for (auto& texture : model.textures) {
+        if (texture.source < 0 || texture.source >= model.images.size())
+            continue;
+
+        const auto& image = model.images[texture.source];
+        auto loadedTexture = std::make_unique<DDing::Texture>();
+        loadedTexture->image = images[texture.source].get();
+        loadedTexture->sampler = *samplers[texture.sampler];
+
+        textures.push_back(std::move(loadedTexture));
+    }
+}
+
+void LoadedGLTF::LoadMaterials(const tinygltf::Model& model)
+{
+    for (auto& material : model.materials) {
+        
+        auto loadedMaterial = std::make_unique<DDing::Material>();
+        
+        //BaseColor
+        if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
+            int textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
+
+            loadedMaterial->baseColor = textures[textureIndex].get();
+        }
+        else {
+            loadedMaterial->baseColorFactor = glm::vec4(
+                material.pbrMetallicRoughness.baseColorFactor[0],
+                material.pbrMetallicRoughness.baseColorFactor[1],
+                material.pbrMetallicRoughness.baseColorFactor[2],
+                material.pbrMetallicRoughness.baseColorFactor[3]
+                );
+        }
+
+        //MetallicRoughness
+        if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
+            int textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+            
+            loadedMaterial->metallicRoughness = textures[textureIndex].get();
+        }
+        else {
+            loadedMaterial->metallicFactor = material.pbrMetallicRoughness.metallicFactor;
+            loadedMaterial->roughnessFactor = material.pbrMetallicRoughness.roughnessFactor;
+        }
+
+        //Normal
+        if (material.normalTexture.index >= 0) {
+            int textureIndex = material.normalTexture.index;
+            loadedMaterial->normal = textures[textureIndex].get();
+        }
+
+        //Emissive
+        if (material.emissiveTexture.index >= 0) {
+            int textureIndex = material.emissiveTexture.index;
+            loadedMaterial->emissive = textures[textureIndex].get();
+        }
+        else {
+            loadedMaterial->emissiveFactor = glm::vec3(
+                material.emissiveFactor[0],
+                material.emissiveFactor[1],
+                material.emissiveFactor[2]
+                );
+        }
+        
+
+    }
+}
+
+void LoadedGLTF::LoadSamplers(const tinygltf::Model& model)
+{
+    for (auto& sampler : model.samplers) {
+        vk::SamplerCreateInfo samplerInfo{};
+        switch (sampler.minFilter) {
+        case TINYGLTF_TEXTURE_FILTER_NEAREST:
+            samplerInfo.setMinFilter(vk::Filter::eNearest);
+            break;
+        case TINYGLTF_TEXTURE_FILTER_LINEAR:
+            samplerInfo.setMinFilter(vk::Filter::eNearest);
+            break;
+        default:
+            samplerInfo.setMinFilter(vk::Filter::eLinear);
+            break;
+        }
+        switch (sampler.magFilter) {
+        case TINYGLTF_TEXTURE_FILTER_NEAREST:
+            samplerInfo.setMagFilter(vk::Filter::eNearest);
+            break;
+        case TINYGLTF_TEXTURE_FILTER_LINEAR:
+            samplerInfo.setMagFilter(vk::Filter::eLinear);
+            break;
+        default:
+            samplerInfo.setMagFilter(vk::Filter::eLinear);  // Default to linear if unsupported
+            break;
+        }
+
+        // Set the address modes (wrap modes)
+        switch (sampler.wrapS) {
+        case TINYGLTF_TEXTURE_WRAP_REPEAT:
+            samplerInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat);
+            break;
+        case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
+            samplerInfo.setAddressModeU(vk::SamplerAddressMode::eMirroredRepeat);
+            break;
+        case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
+            samplerInfo.setAddressModeU(vk::SamplerAddressMode::eClampToEdge);
+            break;
+        default:
+            samplerInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat);  // Default to repeat
+            break;
+        }
+
+        switch (sampler.wrapT) {
+        case TINYGLTF_TEXTURE_WRAP_REPEAT:
+            samplerInfo.setAddressModeV(vk::SamplerAddressMode::eRepeat);
+            break;
+        case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
+            samplerInfo.setAddressModeV(vk::SamplerAddressMode::eMirroredRepeat);
+            break;
+        case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
+            samplerInfo.setAddressModeV(vk::SamplerAddressMode::eClampToEdge);
+            break;
+        default:
+            samplerInfo.setAddressModeV(vk::SamplerAddressMode::eRepeat);  // Default to repeat
+            break;
+        }
+
+
+
+        //TODO
+        samplerInfo.setMipmapMode(vk::SamplerMipmapMode::eLinear);
+        samplerInfo.setAnisotropyEnable(vk::False);
+        samplerInfo.setMaxLod(32.0f);
+
+        auto loadedSampler = DGame->context.logical.createSampler(samplerInfo);
+        samplers.push_back(std::move(loadedSampler));
+    }
 }
 
 void ResourceManager::Init()

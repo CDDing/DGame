@@ -88,4 +88,20 @@ namespace DDing {
         VmaAllocation allocation;
 
     };
+    struct Texture {
+        DDing::Image* image;
+        vk::Sampler sampler;
+    };
+
+    struct Material {
+        Texture* baseColor = nullptr;
+        Texture* normal = nullptr;
+        Texture* metallicRoughness = nullptr;
+        Texture* emissive = nullptr;
+
+        glm::vec4 baseColorFactor = glm::vec4(1.0f);
+        float metallicFactor = 1.0f;
+        float roughnessFactor = 1.0f;
+        glm::vec3 emissiveFactor = glm::vec3(0.0f);
+    };
 }

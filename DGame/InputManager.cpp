@@ -102,15 +102,48 @@ void InputManager::Update()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		ImGui::Begin("Scene");
-		for (auto& obj : DGame->scene.currentScene->GetRootNodes())
-		{
-			DrawSceneHierarchy(obj);
-		}
-		ImGui::End();
-		//TODO
-		//Architect
 
+		//Scene
+		{
+			ImGui::Begin("Scene");
+			for (auto& obj : DGame->scene.currentScene->GetRootNodes())
+			{
+				DrawSceneHierarchy(obj);
+			}
+			ImGui::End();
+
+		}
+		//Status
+		{
+			static std::deque<float> frameTimes;
+			static const int maxFrames = 100;
+			static const int frameSkip = 100;
+			static int frameCount = 0;
+			ImGui::Begin("Status");
+			float currentFrameTime = ImGui::GetIO().DeltaTime * 1000.0f; // in ms
+			float fps = ImGui::GetIO().Framerate;
+
+			// Keep history limited to maxFrames
+			if (frameCount++ % frameSkip == 0) {
+				if (frameTimes.size() >= maxFrames)
+					frameTimes.pop_front();
+				frameTimes.push_back(currentFrameTime);
+			}
+
+			float scale_max = 50.0f; // fallback
+			if (!frameTimes.empty())
+			{
+				auto maxIt = std::max_element(frameTimes.begin(), frameTimes.end());
+				scale_max = std::max(16.0f, *maxIt); // avoid too low Y-axis
+			}
+			ImGui::Text("Frame Time: %.2f ms", currentFrameTime);
+			ImGui::Text("FPS: %.1f", fps);
+			
+			// Show frame time history plot
+			ImGui::PlotLines("Frame Times", &frameTimes[0], frameTimes.size(), 0, nullptr, 0.0f, scale_max, ImVec2(0, 80));
+
+			ImGui::End();
+		}
 		ImGui::Render();
 	}
 	//Handle Keyboard

@@ -17,6 +17,7 @@
 #include <cstring>
 #include <functional>
 #include <cstdlib>
+#include <deque>
 #include <cstdint>
 #include <limits>
 #include <optional>
