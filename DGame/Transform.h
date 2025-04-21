@@ -8,11 +8,11 @@ namespace DDing {
 		~Transform();
 
 		glm::vec3 GetScale() { return scale; }
-		void SetScale(const glm::vec3& worldScale) { scale = worldScale; }
+		void SetScale(const glm::vec3& worldScale) { scale = worldScale; UpdateLocalTransform(); }
 		glm::quat GetRotation() { return rotation; }
-		void SetRotation(const glm::quat& worldRotation) { rotation = worldRotation; }
+		void SetRotation(const glm::quat& worldRotation) { rotation = worldRotation; UpdateLocalTransform(); }
 		glm::vec3 GetPosition() { return position; }
-		void SetPosition(const glm::vec3& worldPosition) { position = worldPosition; }
+		void SetPosition(const glm::vec3& worldPosition) { position = worldPosition; UpdateLocalTransform(); }
 		glm::mat4 GetTransformMatrix() { return localTransform; }
 
 		glm::vec3 GetRight() { return glm::normalize(worldMatrix[0]); }

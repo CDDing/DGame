@@ -9,8 +9,8 @@ public:
 
 	//TODO add Getter and move this private
 	std::vector<std::unique_ptr<DDing::Scene>> scenes;
+	DDing::Scene* currentScene;
 private:
-	
 
 };
 

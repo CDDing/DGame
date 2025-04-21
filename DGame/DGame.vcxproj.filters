@@ -37,6 +37,12 @@
     <Filter Include="소스 파일\Resource">
       <UniqueIdentifier>{beaddd6b-5568-42bc-aabe-0448d85bcade}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Input">
+      <UniqueIdentifier>{68c8dc66-01ac-442a-ac12-9a4a6fc4295a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Input\ImGui">
+      <UniqueIdentifier>{f011f59c-a247-45c8-a630-99fb21445a2b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DGame.cpp">
@@ -110,6 +116,27 @@
     </ClCompile>
     <ClCompile Include="Transform.cpp">
       <Filter>소스 파일\Component</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\imgui.cpp">
+      <Filter>소스 파일\Input\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\imgui_demo.cpp">
+      <Filter>소스 파일\Input\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\imgui_draw.cpp">
+      <Filter>소스 파일\Input\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\imgui_tables.cpp">
+      <Filter>소스 파일\Input\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\imgui_widgets.cpp">
+      <Filter>소스 파일\Input\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\backends\imgui_impl_glfw.cpp">
+      <Filter>소스 파일\Input\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\backends\imgui_impl_vulkan.cpp">
+      <Filter>소스 파일\Input\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

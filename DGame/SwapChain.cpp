@@ -52,6 +52,7 @@ void DDing::SwapChain::create()
 
     swapChain = context->logical.createSwapchainKHR(createInfo);
     images = swapChain.getImages();
+    imgCnt = images.size();
     imageFormat = surfaceFormat.format;
     this->extent = extent;
 

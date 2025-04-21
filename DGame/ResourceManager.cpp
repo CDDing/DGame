@@ -145,6 +145,7 @@ std::unique_ptr<DDing::GameObject> ResourceManager::CreateNodeRecursive(std::uni
 {
     const auto& node = model.nodes[nodeIndex];
     auto go = std::make_unique<DDing::GameObject>();
+    go->name = node.name;
 
     if (!node.translation.empty() || !node.rotation.empty() || !node.scale.empty()) {
         auto transform = go->GetComponent<DDing::Transform>();

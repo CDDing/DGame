@@ -32,7 +32,10 @@ void RenderManager::DrawFrame(DDing::Scene* scene, DDing::PassType passType)
         throw std::runtime_error("RenderPass type not found");
 
     passes[passType]->Render(frameData.commandBuffer, scene);
+    
+    //First copy to Swapchain, and draw gui on swapChain
     copyResultToSwapChain(*frameData.commandBuffer, imageIndex);
+    DGame->input.DrawImGui(*frameData.commandBuffer, imageIndex);
     
     frameData.commandBuffer.end();
     
@@ -338,7 +341,8 @@ void RenderManager::copyResultToSwapChain(vk::CommandBuffer commandBuffer, uint3
         vk::ImageLayout::eTransferDstOptimal,
         copyRegion);
 
-    DDing::Image::setImageLayout(commandBuffer, DGame->swapChain.images[imageIndex], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::ePresentSrcKHR);
+    //For
+    DDing::Image::setImageLayout(commandBuffer, DGame->swapChain.images[imageIndex], vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eColorAttachmentOptimal);
     renderedImage.setImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal);
 
 

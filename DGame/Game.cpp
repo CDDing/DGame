@@ -15,8 +15,9 @@ Game::~Game()
 void Game::Init()
 {
     render.Init();
-
+    input.Init();
     auto scenes = resource.LoadGLTF("TEMP", "Resources/ABeautifulGame/ABeautifulGame.gltf");
+    scene.currentScene = scenes[0].get();
     for (auto & s : scenes) {
         scene.AddScene(std::move(s));
     }
@@ -38,6 +39,7 @@ void Game::Run()
 
 void Game::Update()
 {
+    input.Update();
 }
 
 void Game::Render()

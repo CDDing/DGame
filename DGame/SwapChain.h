@@ -1,7 +1,9 @@
 #pragma once
+class InputManager;
 namespace DDing {
     class SwapChain
     {
+        friend class ::InputManager;
     public:
         static SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device, vk::SurfaceKHR surface) {
             SwapChainSupportDetails details;

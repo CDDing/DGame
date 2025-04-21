@@ -3,6 +3,7 @@
 #include "SwapChain.h"
 #include "RenderManager.h"
 #include "ResourceManager.h"
+#include "InputManager.h"
 #include "SceneManager.h"
 class Game
 {
@@ -19,6 +20,7 @@ public:
 
 	DDing::Context context;
 	DDing::SwapChain swapChain;
+	InputManager input;
 	RenderManager render;
 	SceneManager scene;
 	ResourceManager resource;

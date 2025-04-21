@@ -16,7 +16,6 @@ namespace DDing {
 	private:
 		//For Initailize Order
 		std::vector<vk::Queue> queues;
-		GLFWwindow* window;
 	public:
 		enum QueueType {
 			GRAPHICS,
@@ -31,6 +30,7 @@ namespace DDing {
 		vk::Queue& GetQueue(int type) { return queues[type]; }
 		QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device, vk::SurfaceKHR surface);
 
+		GLFWwindow* window;
 		vk::raii::Context context;
 		vk::raii::Instance instance;
 		vk::raii::DebugUtilsMessengerEXT debug;
