@@ -115,6 +115,11 @@ vk::raii::Device DDing::Context::createLogicalDevice()
 	pddifEXT.descriptorBindingPartiallyBound = vk::True;
 	pddifEXT.descriptorBindingVariableDescriptorCount = vk::True;
 	pddifEXT.shaderSampledImageArrayNonUniformIndexing = vk::True;
+	pddifEXT.descriptorBindingSampledImageUpdateAfterBind = vk::True;
+	pddifEXT.shaderUniformBufferArrayNonUniformIndexing = vk::True;
+	pddifEXT.descriptorBindingUniformBufferUpdateAfterBind = vk::True;
+	pddifEXT.shaderStorageBufferArrayNonUniformIndexing = vk::True;
+	pddifEXT.descriptorBindingStorageBufferUpdateAfterBind = vk::True;
 
 	vk::PhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
 	rayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;  // 기능 활성화

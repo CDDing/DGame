@@ -37,9 +37,15 @@ void DDing::ForwardPass::Render(vk::CommandBuffer commandBuffer, DDing::Scene* s
 	commandBuffer.setViewport(0, viewport);
 	commandBuffer.setScissor(0, scissor);
 	FrameData& frameData = DGame->render.frameDatas[DGame->render.currentFrame];
+
+	std::vector<vk::DescriptorSet> descriptorSets = {
+		*frameData.descriptorSet,
+		scene->gltfDescriptor
+	};
+
 	commandBuffer.beginRenderPass(renderPassbeginInfo, vk::SubpassContents::eInline);
 	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->GetLayout(), 0, *frameData.descriptorSet,nullptr);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->GetLayout(), 0, descriptorSets,nullptr);
 	//commandBuffer.draw(3, 1, 0, 0);
 	
 	for (auto& rootNode : scene->GetRootNodes()) {

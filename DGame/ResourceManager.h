@@ -14,6 +14,9 @@ struct LoadedGLTF {
 
 	std::vector<DDing::GameObject*> rootNodes;
 
+	vk::raii::DescriptorPool descriptorPool = nullptr;
+	vk::raii::DescriptorSet descriptorSet = nullptr;
+	DDing::Buffer materialBuffer;
 	LoadedGLTF(const std::string path);
 private:
 
@@ -23,6 +26,9 @@ private:
 	void LoadTextures(const tinygltf::Model& model);
 	void LoadMaterials(const tinygltf::Model& model);
 	void LoadSamplers(const tinygltf::Model& model);
+	void InitDescriptorSet();
+	void InitBuffer();
+
 };
 class ResourceManager
 {

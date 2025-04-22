@@ -22,6 +22,7 @@ void Game::Init()
 
     auto tempScene = std::make_unique<DDing::Scene>();
     tempScene->LoadSceneFromGLTF(resource.gltfs[0]);
+    tempScene->gltfDescriptor = *resource.gltfs[0].descriptorSet;
     scene.currentScene = tempScene.get();
     scene.AddScene(std::move(tempScene));
     

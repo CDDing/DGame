@@ -13,6 +13,7 @@ namespace DDing {
 		auto& GetRootNodes() { return rootNodes; }
 		void Update();
 
+		vk::DescriptorSet gltfDescriptor;
 	private:
 		std::unique_ptr<DDing::GameObject> camera;
 

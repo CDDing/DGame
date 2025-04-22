@@ -32,6 +32,8 @@ LoadedGLTF::LoadedGLTF(const std::string path)
     LoadMaterials(model);
     LoadMeshes(model);
     LoadNodes(model);
+    InitBuffer();
+    InitDescriptorSet();
     
 }
 
@@ -178,7 +180,8 @@ void LoadedGLTF::LoadMeshes(const tinygltf::Model& model)
                 }
 
             }
-            auto loadedPrimitive = std::make_unique<DDing::Primitive>(vertices, indices, materials[primitive.material].get());
+            auto loadedPrimitive = std::make_unique<DDing::Primitive>(vertices, indices);
+            loadedPrimitive->materialIndex = primitive.material;
             loadedMesh->addPrimitive(std::move(loadedPrimitive));
         }
         meshes.push_back(std::move(loadedMesh));
@@ -251,6 +254,8 @@ void LoadedGLTF::LoadTextures(const tinygltf::Model& model)
         loadedTexture->image = images[texture.source].get();
         loadedTexture->sampler = *samplers[texture.sampler];
 
+        
+
         textures.push_back(std::move(loadedTexture));
     }
 }
@@ -263,9 +268,7 @@ void LoadedGLTF::LoadMaterials(const tinygltf::Model& model)
         
         //BaseColor
         if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
-            int textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
-
-            loadedMaterial->baseColor = textures[textureIndex].get();
+            loadedMaterial->baseColorIndex = material.pbrMetallicRoughness.baseColorTexture.index;
         }
         else {
             loadedMaterial->baseColorFactor = glm::vec4(
@@ -278,9 +281,7 @@ void LoadedGLTF::LoadMaterials(const tinygltf::Model& model)
 
         //MetallicRoughness
         if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
-            int textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
-            
-            loadedMaterial->metallicRoughness = textures[textureIndex].get();
+            loadedMaterial->metallicRoughnessIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;   
         }
         else {
             loadedMaterial->metallicFactor = material.pbrMetallicRoughness.metallicFactor;
@@ -289,14 +290,12 @@ void LoadedGLTF::LoadMaterials(const tinygltf::Model& model)
 
         //Normal
         if (material.normalTexture.index >= 0) {
-            int textureIndex = material.normalTexture.index;
-            loadedMaterial->normal = textures[textureIndex].get();
+            loadedMaterial->normalMapIndex = material.normalTexture.index;
         }
 
         //Emissive
         if (material.emissiveTexture.index >= 0) {
-            int textureIndex = material.emissiveTexture.index;
-            loadedMaterial->emissive = textures[textureIndex].get();
+            loadedMaterial->emissiveIndex = material.emissiveTexture.index;
         }
         else {
             loadedMaterial->emissiveFactor = glm::vec3(
@@ -377,6 +376,116 @@ void LoadedGLTF::LoadSamplers(const tinygltf::Model& model)
 
         auto loadedSampler = DGame->context.logical.createSampler(samplerInfo);
         samplers.push_back(std::move(loadedSampler));
+    }
+}
+
+void LoadedGLTF::InitDescriptorSet()
+{
+    {
+    std::vector<vk::DescriptorPoolSize> poolSizes = {
+        vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer,1),
+        vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler,1024),
+    };
+
+    vk::DescriptorPoolCreateInfo poolInfo{};
+    poolInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet | vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
+    poolInfo.setPoolSizes(poolSizes);
+    poolInfo.setMaxSets(2);
+
+    descriptorPool = DGame->context.logical.createDescriptorPool(poolInfo);
+    }
+    {
+
+    std::vector<uint32_t> variableDescriptorCounts = { 1024 };
+    vk::DescriptorSetVariableDescriptorCountAllocateInfo variableDescriptorCountAllocInfo{};
+    variableDescriptorCountAllocInfo.setDescriptorCounts(variableDescriptorCounts);
+
+    vk::DescriptorSetAllocateInfo allocInfo{};
+    allocInfo.setDescriptorPool(*descriptorPool);
+    allocInfo.setDescriptorSetCount(1);
+    allocInfo.setSetLayouts(*DGame->render.bindLessLayout);
+    allocInfo.setPNext(&variableDescriptorCountAllocInfo);
+
+    descriptorSet = std::move(DGame->context.logical.allocateDescriptorSets(allocInfo).front());
+    }
+   
+    {
+
+        std::vector<vk::WriteDescriptorSet> writeDescriptorSets(2, {});
+        vk::DescriptorBufferInfo bufferInfo{};
+        bufferInfo.setOffset(0);
+        bufferInfo.setBuffer(materialBuffer.buffer);
+        bufferInfo.setRange(sizeof(DDing::Material) * materials.size());
+        
+        writeDescriptorSets[0].dstSet = *descriptorSet;
+        writeDescriptorSets[0].dstBinding = 0;
+        writeDescriptorSets[0].dstArrayElement = 0;
+        writeDescriptorSets[0].descriptorType = vk::DescriptorType::eStorageBuffer;
+        writeDescriptorSets[0].descriptorCount = 1;
+        writeDescriptorSets[0].pBufferInfo = &bufferInfo;
+
+        std::vector<vk::DescriptorImageInfo> textureDescriptors(textures.size());
+        for (size_t i = 0; i < textures.size(); i++) {
+            textureDescriptors[i].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            textureDescriptors[i].sampler = textures[i]->sampler;
+            textureDescriptors[i].imageView = textures[i]->image->imageView;
+        }
+
+        writeDescriptorSets[1].dstBinding = 1;
+        writeDescriptorSets[1].dstArrayElement = 0;
+        writeDescriptorSets[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+        writeDescriptorSets[1].descriptorCount = static_cast<uint32_t>(textures.size());
+        writeDescriptorSets[1].dstSet = *descriptorSet;
+        writeDescriptorSets[1].pImageInfo = textureDescriptors.data();
+
+        DGame->context.logical.updateDescriptorSets(writeDescriptorSets, nullptr);
+    }
+}
+
+void LoadedGLTF::InitBuffer()
+{
+    DDing::Buffer staging;
+    auto bufferSize = materials.size() * sizeof(DDing::Material);
+    {
+        vk::BufferCreateInfo bufferInfo{};
+        bufferInfo.setUsage(vk::BufferUsageFlagBits::eTransferSrc);
+        bufferInfo.setSize(bufferSize);
+
+        VmaAllocationCreateInfo allocCreateInfo{};
+        allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        allocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+        staging = DDing::Buffer(bufferInfo, allocCreateInfo);
+
+        void* ptr = staging.GetMappedPtr();
+
+        std::vector<DDing::Material> tempMaterials;
+        for (auto& material : materials) {
+            tempMaterials.push_back(*material);
+        }
+
+        memcpy(ptr, tempMaterials.data(), tempMaterials.size() * sizeof(DDing::Material));
+    }
+    {
+        vk::BufferCreateInfo bufferInfo{};
+        bufferInfo.setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer);
+        bufferInfo.setSize(bufferSize);
+
+        VmaAllocationCreateInfo allocCreateInfo{};
+        allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        allocCreateInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+        allocCreateInfo.priority = 1.0f;
+
+        materialBuffer = DDing::Buffer(bufferInfo, allocCreateInfo);
+
+        DGame->context.immediate_submit([&](vk::CommandBuffer commandBuffer) {
+            vk::BufferCopy copyRegion{};
+            copyRegion.setSrcOffset(0);
+            copyRegion.setDstOffset(0);
+            copyRegion.setSize(bufferSize);
+            
+            commandBuffer.copyBuffer(staging.buffer, materialBuffer.buffer, copyRegion);
+            });
     }
 }
 

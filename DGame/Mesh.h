@@ -12,10 +12,11 @@ namespace DDing {
 
 	public:
 		Primitive();
-		Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> indices, DDing::Material* material);
+		Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> indices);
 		void Draw(vk::CommandBuffer commandBuffer, const glm::mat4& transform, const vk::PipelineLayout pipelineLayout);
 
 		vk::DeviceAddress vertexBufferAddress = 0;
+		int materialIndex = -1;
 	private:
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
@@ -23,7 +24,6 @@ namespace DDing {
 		DDing::Buffer vertexBuffer;
 		DDing::Buffer indexBuffer;
 
-		DDing::Material* material;
 
 	};
 	class Mesh

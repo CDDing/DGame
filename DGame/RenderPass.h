@@ -22,6 +22,7 @@ namespace DDing {
 		struct PushConstant {
 			glm::mat4 transformMatrix;
 			vk::DeviceAddress deviceAddress;
+			int materialIndex;
 		};
 		static vk::Format DepthFormat;
 		static vk::Format ColorFormat;

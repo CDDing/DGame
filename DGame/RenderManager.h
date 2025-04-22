@@ -50,13 +50,14 @@ public:
 	vk::RenderPass currentRenderPass;
 	std::vector<FrameData> frameDatas = {};
 	vk::raii::DescriptorSetLayout globalSetLayout = nullptr;
+	vk::raii::DescriptorSetLayout bindLessLayout = nullptr;
 private:
 	void initRenderPasses();
 	void initPipelines();
 	void initPasses();
 	void initGlobalDescriptorSetLayout();
+	void initBindLessDescriptorSetLayout();
 	void initFrameDatas();
-	void initSamplers();
 
 	void submitCommandBuffer(vk::CommandBuffer commandBuffer);
 	void presentCommandBuffer(vk::CommandBuffer commandBuffer,uint32_t imageIndex);

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Mesh.h"
-DDing::Primitive::Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> indices,DDing::Material* material)
-	:vertices(vertices), indices(indices), material(material)
+DDing::Primitive::Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> indices)
+	:vertices(vertices), indices(indices)
 {
 	const size_t vertexBufferSize = vertices.size() * sizeof(Vertex);
 	const size_t indexBufferSize = indices.size() * sizeof(uint32_t);
@@ -79,12 +79,13 @@ void DDing::Primitive::Draw(vk::CommandBuffer commandBuffer, const glm::mat4& tr
 {
 	ForwardPass::PushConstant pushConstant{
 		transform,
-		vertexBufferAddress // primitive 绊蜡 林家
+		vertexBufferAddress, // primitive 绊蜡 林家
+		materialIndex
 	};
 
 	commandBuffer.pushConstants<ForwardPass::PushConstant>(
 		pipelineLayout,
-		vk::ShaderStageFlagBits::eVertex,
+		vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
 		0,
 		pushConstant
 	);

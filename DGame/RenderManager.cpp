@@ -27,7 +27,7 @@ void RenderManager::DrawFrame(DDing::Scene* scene, DDing::PassType passType)
     vk::CommandBufferBeginInfo beginInfo{};
     frameData.commandBuffer.begin(beginInfo);
     copyGlobalBuffer(*frameData.commandBuffer);
-
+    
     auto passIt = passes.find(passType);
     if (passIt == passes.end())
         throw std::runtime_error("RenderPass type not found");
@@ -218,12 +218,13 @@ void RenderManager::initPipelines()
         pipelineDesc.depthStencil = depthStencil;
 
         //TODO
+        std::vector<vk::DescriptorSetLayout> setLayouts = { *globalSetLayout,*bindLessLayout };
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.setSetLayouts({*globalSetLayout});
+        pipelineLayoutInfo.setSetLayouts(setLayouts);
         vk::PushConstantRange pushConstantRange{};
         pushConstantRange.setOffset(0);
         pushConstantRange.setSize(sizeof(DDing::ForwardPass::PushConstant));
-        pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex);
+        pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
         pipelineLayoutInfo.setPushConstantRanges({pushConstantRange});
         pipelineDesc.layout = pipelineLayoutInfo;
 
@@ -262,6 +263,43 @@ void RenderManager::initGlobalDescriptorSetLayout()
     vk::DescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.setBindings(layoutBinding);
     globalSetLayout = DGame->context.logical.createDescriptorSetLayout(layoutInfo);
+}
+
+void RenderManager::initBindLessDescriptorSetLayout()
+{
+    vk::DescriptorSetLayoutBinding materialBufferBinding{};
+    materialBufferBinding.binding = 0;
+    materialBufferBinding.descriptorType = vk::DescriptorType::eStorageBuffer;
+    materialBufferBinding.descriptorCount = 1;
+    materialBufferBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+
+    vk::DescriptorSetLayoutBinding textureArrayBinding{};
+    textureArrayBinding.binding = 1;
+    textureArrayBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+    textureArrayBinding.descriptorCount = 1024; //TODO Change
+    textureArrayBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+    textureArrayBinding.pImmutableSamplers = nullptr;
+
+    
+    vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlagCreateInfo{};
+
+    std::vector<vk::DescriptorBindingFlags> bindingFlags{
+        {},
+        vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind,
+    };
+    bindingFlagCreateInfo.setBindingFlags(bindingFlags);
+
+    std::vector<vk::DescriptorSetLayoutBinding> bindings{
+        materialBufferBinding,textureArrayBinding,
+    };
+    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.bindingCount = 2;
+    layoutInfo.setBindings(bindings);
+    layoutInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT;
+    layoutInfo.pNext = &bindingFlagCreateInfo;
+
+    bindLessLayout = DGame->context.logical.createDescriptorSetLayout(layoutInfo);
+
 }
 
 void RenderManager::initFrameDatas()
@@ -355,6 +393,10 @@ void RenderManager::initFrameDatas()
 
                 DGame->context.logical.updateDescriptorSets(descriptorWrite, nullptr);
             }
+        }
+        //Bindless
+        {
+            initBindLessDescriptorSetLayout();
         }
         frameDatas.push_back(std::move(frameData));
     }

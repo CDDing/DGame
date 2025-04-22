@@ -93,16 +93,19 @@ namespace DDing {
         vk::Sampler sampler;
     };
 
-    struct Material {
-        Texture* baseColor = nullptr;
-        Texture* normal = nullptr;
-        Texture* metallicRoughness = nullptr;
-        Texture* emissive = nullptr;
+    struct alignas(16) Material {
+        int baseColorIndex = -1;
+        int normalMapIndex = -1;
+        int metallicRoughnessIndex = -1;
+        int emissiveIndex = -1;
 
         glm::vec4 baseColorFactor = glm::vec4(1.0f);
         float metallicFactor = 1.0f;
         float roughnessFactor = 1.0f;
+        glm::vec2 padding;
         glm::vec3 emissiveFactor = glm::vec3(0.0f);
+
+        float padding2;
     };
 
 }
