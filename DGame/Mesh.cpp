@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Mesh.h"
-DDing::Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices)
-	:vertices(vertices), indices(indices)
+DDing::Primitive::Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> indices,DDing::Material* material)
+	:vertices(vertices), indices(indices), material(material)
 {
 	const size_t vertexBufferSize = vertices.size() * sizeof(Vertex);
 	const size_t indexBufferSize = indices.size() * sizeof(uint32_t);
@@ -75,8 +75,25 @@ DDing::Mesh::Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices)
 	}
 }
 
-void DDing::Mesh::Draw(vk::CommandBuffer commandBuffer)
+void DDing::Primitive::Draw(vk::CommandBuffer commandBuffer, const glm::mat4& transform, const vk::PipelineLayout pipelineLayout)
 {
+	ForwardPass::PushConstant pushConstant{
+		transform,
+		vertexBufferAddress // primitive 고유 주소
+	};
+
+	commandBuffer.pushConstants<ForwardPass::PushConstant>(
+		pipelineLayout,
+		vk::ShaderStageFlagBits::eVertex,
+		0,
+		pushConstant
+	);
 	commandBuffer.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint32);
 	commandBuffer.drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+}
+
+void DDing::Mesh::Draw(vk::CommandBuffer commandBuffer, const glm::mat4& transform, const vk::PipelineLayout pipelineLayout)
+{
+	for (auto& primitive : primitives)
+		primitive->Draw(commandBuffer, transform, pipelineLayout);
 }

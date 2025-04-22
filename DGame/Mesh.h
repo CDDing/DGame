@@ -8,13 +8,13 @@ namespace DDing {
 		glm::vec2 texcoord;
 		glm::vec2 pad3;
 	};
-	class Mesh
-	{
+	class Primitive {
+
 	public:
-		Mesh();
-		Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices);
-		void Draw(vk::CommandBuffer commandBuffer);
-		
+		Primitive();
+		Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> indices, DDing::Material* material);
+		void Draw(vk::CommandBuffer commandBuffer, const glm::mat4& transform, const vk::PipelineLayout pipelineLayout);
+
 		vk::DeviceAddress vertexBufferAddress = 0;
 	private:
 		std::vector<Vertex> vertices;
@@ -23,6 +23,17 @@ namespace DDing {
 		DDing::Buffer vertexBuffer;
 		DDing::Buffer indexBuffer;
 
+		DDing::Material* material;
+
+	};
+	class Mesh
+	{
+	public:
+		void Draw(vk::CommandBuffer commandBuffer, const glm::mat4& transform, const vk::PipelineLayout pipelineLayout);
+
+		void addPrimitive(std::unique_ptr<DDing::Primitive> primitive) { primitives.push_back(std::move(primitive)); }
+	private:
+		std::vector<std::unique_ptr<DDing::Primitive>> primitives;
 	};
 }
 

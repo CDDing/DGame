@@ -10,6 +10,7 @@ namespace DDing {
 
 		GameObject* GetGameObject() { return gameObject; }
 
+		virtual void DrawUI() {};
 		virtual void Update() {};
 	private:
 		friend class GameObject;

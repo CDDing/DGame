@@ -108,9 +108,11 @@ void LoadedGLTF::LoadMeshes(const tinygltf::Model& model)
 {
     for (const auto& mesh : model.meshes) {
 
-        std::vector<DDing::Vertex> vertices;
-        std::vector<uint32_t> indices;
+        auto loadedMesh = std::make_unique<DDing::Mesh>();
         for (const auto& primitive : mesh.primitives) {
+            std::vector<DDing::Vertex> vertices;
+            std::vector<uint32_t> indices;
+
             //Index
             {
                 if (primitive.indices >= 0) {
@@ -176,9 +178,10 @@ void LoadedGLTF::LoadMeshes(const tinygltf::Model& model)
                 }
 
             }
+            auto loadedPrimitive = std::make_unique<DDing::Primitive>(vertices, indices, materials[primitive.material].get());
+            loadedMesh->addPrimitive(std::move(loadedPrimitive));
         }
-        auto mesh = std::make_unique<DDing::Mesh>(vertices, indices);
-        meshes.push_back(std::move(mesh));
+        meshes.push_back(std::move(loadedMesh));
     }
 }
 
@@ -303,7 +306,7 @@ void LoadedGLTF::LoadMaterials(const tinygltf::Model& model)
                 );
         }
         
-
+        materials.push_back(std::move(loadedMaterial));
     }
 }
 

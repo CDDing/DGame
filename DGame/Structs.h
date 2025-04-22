@@ -104,4 +104,5 @@ namespace DDing {
         float roughnessFactor = 1.0f;
         glm::vec3 emissiveFactor = glm::vec3(0.0f);
     };
+
 }

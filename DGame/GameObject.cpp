@@ -29,12 +29,8 @@ void DDing::GameObject::Draw(vk::CommandBuffer commandBuffer)
             return;
 
         auto transformMatrix = GetComponent<DDing::Transform>()->GetTransformMatrix();
-        ForwardPass::PushConstant pushConstant{
-            transformMatrix, mesh->vertexBufferAddress
-        };
 
-        commandBuffer.pushConstants<ForwardPass::PushConstant>(*DGame->render.currentPipeline->GetLayout(), vk::ShaderStageFlagBits::eVertex, 0, pushConstant);
-        mesh->Draw(commandBuffer);
+        mesh->Draw(commandBuffer, transformMatrix, *DGame->render.currentPipeline->GetLayout());
     }
 
     auto transform = GetComponent<DDing::Transform>();
