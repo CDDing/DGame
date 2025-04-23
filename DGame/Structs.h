@@ -55,6 +55,7 @@ namespace DDing {
 
         ~Image();
         void setImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout newLayout);
+        void generateMipmaps(vk::CommandBuffer commandBuffer);
         VkImage image = nullptr;
         vk::ImageView imageView = nullptr;
         VmaAllocation allocation;
@@ -62,6 +63,7 @@ namespace DDing {
         vk::ImageLayout layout = vk::ImageLayout::eUndefined;
         vk::Format format;
         uint32_t mipLevel;
+        vk::Extent3D extent;
     };
     struct Buffer {
         Buffer() = default;

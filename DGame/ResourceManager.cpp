@@ -65,14 +65,15 @@ void LoadedGLTF::LoadImages(const tinygltf::Model& model)
 
         //change format if needed
         vk::Format imgFormat = vk::Format::eR8G8B8A8Unorm;
-        
+        uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(img.width, img.height)))) + 1;
+
         vk::ImageCreateInfo imageCreateInfo{};
         imageCreateInfo.setArrayLayers(1);
-        imageCreateInfo.setMipLevels(1);
+        imageCreateInfo.setMipLevels(mipLevels);
         imageCreateInfo.setExtent({ static_cast<uint32_t>(img.width),static_cast<uint32_t>(img.height),1 });
         imageCreateInfo.setImageType(vk::ImageType::e2D);
         imageCreateInfo.setTiling(vk::ImageTiling::eOptimal);
-        imageCreateInfo.setUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst);
+        imageCreateInfo.setUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc);
         imageCreateInfo.setSharingMode(vk::SharingMode::eExclusive);
         imageCreateInfo.setSamples(vk::SampleCountFlagBits::e1);
         imageCreateInfo.setInitialLayout(vk::ImageLayout::eUndefined);
@@ -109,7 +110,9 @@ void LoadedGLTF::LoadImages(const tinygltf::Model& model)
             
             image->setImageLayout(commandBuffer, vk::ImageLayout::eTransferDstOptimal);
             commandBuffer.copyBufferToImage(staging.buffer, image->image, vk::ImageLayout::eTransferDstOptimal, region);
-            image->setImageLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal);
+            image->generateMipmaps(commandBuffer);
+            //image->setImageLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal);
+
             });
 
         images.push_back(std::move(image));
