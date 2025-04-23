@@ -214,7 +214,7 @@ void LoadedGLTF::LoadNodes(const tinygltf::Model& model)
                     });
             
             if (node.rotation.size() == 4) {
-                glm::quat q = glm::quat(node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
+                glm::quat q = glm::quat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
                 transform->SetLocalRotation(q);
             }
             if (node.scale.size() == 3)
@@ -497,5 +497,5 @@ void LoadedGLTF::InitBuffer()
 
 void ResourceManager::Init()
 {
-    gltfs.push_back(LoadedGLTF("Resources/NodePerformanceTest/NodePerformanceTest.glb"));
+    gltfs.push_back(LoadedGLTF("Resources/ABeautifulGame/ABeautifulGame.gltf"));
 }

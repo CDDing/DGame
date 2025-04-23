@@ -53,7 +53,7 @@ void DDing::Camera::UpdatePosition()
 	if (keyPressed[GLFW_KEY_Q]) move -= up;
 
 	if (glm::length(move) > 0.0f) {
-		auto movedPosition = transform->GetLocalPosition() + glm::normalize(move) * 0.1f;
+		auto movedPosition = transform->GetLocalPosition() + glm::normalize(move) * 0.001f;
 		transform->SetLocalPosition(movedPosition);
 	}
 }
