@@ -154,10 +154,20 @@ void InputManager::Update()
 			ImGui::Text("Transform");
 
 			auto transform = selectedObject->GetComponent<DDing::Transform>();
-			ImGui::DragFloat3("Position", &transform->GetLocalPosition()[0], 0.1f);
-			ImGui::DragFloat3("Rotation (Euler)", &transform->GetLocalRotation()[0], 0.1f);
-			ImGui::DragFloat3("Scale", &transform->GetLocalScale()[0], 0.1f);
 
+			glm::vec3 pos = transform->GetLocalPosition();
+			glm::vec3 rot = glm::eulerAngles(transform->GetLocalRotation()); // Quaternion → Euler 변환
+			glm::vec3 scale = transform->GetLocalScale();
+
+			if (ImGui::DragFloat3("Position", &pos[0], 0.1f)) {
+				transform->SetLocalPosition(pos);
+			}
+			if (ImGui::DragFloat3("Rotation (Euler)", &rot[0], 0.1f)) {
+				transform->SetLocalRotation(glm::quat(rot)); // Euler → Quaternion 변환
+			}
+			if (ImGui::DragFloat3("Scale", &scale[0], 0.1f)) {
+				transform->SetLocalScale(scale);
+			}
 			// Show components of the selected GameObject
 			//auto componentNames = selectedObject->GetComponentNames();
 			//for (const auto& name : componentNames) {
