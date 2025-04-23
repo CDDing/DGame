@@ -149,6 +149,32 @@ void InputManager::Update()
 	{
 		ImGui::Begin("Inspector");
 		if (selectedObject) {
+
+			// Show Transform Data
+			ImGui::Text("Transform");
+
+			auto transform = selectedObject->GetComponent<DDing::Transform>();
+			ImGui::DragFloat3("Position", &transform->GetLocalPosition()[0], 0.1f);
+			ImGui::DragFloat3("Rotation (Euler)", &transform->GetLocalRotation()[0], 0.1f);
+			ImGui::DragFloat3("Scale", &transform->GetLocalScale()[0], 0.1f);
+
+			// Show components of the selected GameObject
+			//auto componentNames = selectedObject->GetComponentNames();
+			//for (const auto& name : componentNames) {
+			//	if (ImGui::CollapsingHeader(name.c_str())) {
+			//		auto component = selectedObject->GetComponentByName(name);
+			//		if (name == "MeshRenderer") {
+			//			// Handle specific UI for MeshRenderer (for example, material properties)
+			//			auto meshRenderer = selectedObject->GetComponent<MeshRenderer>();
+			//			if (meshRenderer) {
+			//				// Example: Display mesh-related data (this depends on your MeshRenderer implementation)
+			//				ImGui::Text("Mesh: %s", meshRenderer->GetMeshName().c_str());
+			//			}
+			//		}
+			//		// Add other component-specific UI handling as needed
+			//	}
+			//}
+
 		}
 		ImGui::End();
 	}

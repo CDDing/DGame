@@ -13,20 +13,22 @@ void DDing::Camera::Update()
 void DDing::Camera::UpdateMatrix()
 {
 	auto transform = gameObject->GetComponent<DDing::Transform>();
-	auto eyePosition = transform->GetPosition();
+	auto eyePosition = transform->GetWorldPosition();
 	auto focusDirection = eyePosition + transform->GetLook();
 	auto upDirection = transform->GetUp();
 
 	View = glm::lookAtLH(eyePosition, focusDirection, upDirection);
 
 	//if needed, Orthogonal add
-	Projection = glm::perspectiveFovLH(glm::radians(70.0f), static_cast<float>(DGame->swapChain.extent.width), static_cast<float>(DGame->swapChain.extent.height), 0.1f, 100.0f);
+	Projection = glm::perspectiveFovLH(glm::radians(70.0f), static_cast<float>(DGame->swapChain.extent.width), static_cast<float>(DGame->swapChain.extent.height), 0.1f, 10000.0f);
+
+	Projection[1][1] *= -1;
 }
 
 void DDing::Camera::UploadToStaging()
 {
 	FrameData& frame = DGame->render.frameDatas[DGame->render.currentFrame];
-	auto eyePosition = gameObject->GetComponent<DDing::Transform>()->GetPosition();
+	auto eyePosition = gameObject->GetComponent<DDing::Transform>()->GetWorldPosition();
 	void* mappedData = frame.globalStagingBuffer.GetMappedPtr();
 	memcpy((char*)mappedData + offsetof(GlobalBuffer, view), &View, sizeof(glm::mat4));
 	memcpy((char*)mappedData + offsetof(GlobalBuffer, projection), &Projection, sizeof(glm::mat4));
@@ -51,8 +53,8 @@ void DDing::Camera::UpdatePosition()
 	if (keyPressed[GLFW_KEY_Q]) move -= up;
 
 	if (glm::length(move) > 0.0f) {
-		auto movedPosition = transform->GetPosition() + glm::normalize(move) * 0.01f;
-		transform->SetPosition(movedPosition);
+		auto movedPosition = transform->GetLocalPosition() + glm::normalize(move) * 0.1f;
+		transform->SetLocalPosition(movedPosition);
 	}
 }
 
@@ -91,13 +93,15 @@ void DDing::Camera::UpdateRotation()
 	float pitchDelta = -delta.y * sensitivity;
 
 	auto transform = gameObject->GetComponent<DDing::Transform>();
-	glm::vec3 euler = glm::eulerAngles(transform->GetRotation());
-	euler.y += glm::radians(yawDelta);
-	euler.x += glm::radians(pitchDelta);
+	glm::quat quat = transform->GetLocalRotation();
+	
+	glm::quat pitchQuat = glm::angleAxis(glm::radians(pitchDelta), glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::quat yawQuat = glm::angleAxis(glm::radians(yawDelta), glm::vec3(0.0f, 1.0f, 0.0f));
 
-	euler.x = glm::clamp(euler.x, glm::radians(-89.0f), glm::radians(89.0f));
+	quat = yawQuat * quat;
+	quat = quat * pitchQuat;
 
-	transform->SetRotation(glm::quat(euler));
+	transform->SetLocalRotation(glm::quat(quat));
 
 	lastMouse = currentMouse;
 }

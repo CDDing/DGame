@@ -28,7 +28,7 @@ void DDing::GameObject::Draw(vk::CommandBuffer commandBuffer)
         if (!mesh)
             return;
 
-        auto transformMatrix = GetComponent<DDing::Transform>()->GetTransformMatrix();
+        auto transformMatrix = GetComponent<DDing::Transform>()->GetWorldMatrix();
 
         mesh->Draw(commandBuffer, transformMatrix, *DGame->render.currentPipeline->GetLayout());
     }

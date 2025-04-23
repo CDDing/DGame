@@ -1,41 +1,53 @@
 #include "pch.h"
 #include "Transform.h"
 
-DDing::Transform::Transform()
-    : position(0.0f), rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)), scale(1.0f, 1.0f, 1.0f) {
-    UpdateLocalTransform();
+DDing::Transform::Transform(){
+    RecalculateMatrices();
 }
 
 DDing::Transform::~Transform()
 {
 }
 
-//void DDing::Transform::SetPosition(const glm::vec3& newPosition)
-//{
-//    position = newPosition;
-//    UpdateLocalTransform();
-//}
-//
-//void DDing::Transform::SetRotation(const glm::quat& newRotation)
-//{
-//    rotation = newRotation;
-//    UpdateLocalTransform();
-//}
-//
-//void DDing::Transform::SetScale(const glm::vec3& newScale)
-//{
-//    scale = newScale;
-//    UpdateLocalTransform();
-//}
 
 void DDing::Transform::Update()
 {
 
 }
 
-void DDing::Transform::UpdateLocalTransform()
+bool DDing::Transform::DecomposeMatrix(const glm::mat4& matrix, glm::vec3& position, glm::quat& rotation, glm::vec3& scale)
 {
-    localTransform = glm::translate(glm::mat4(1.0f), position) *
-        glm::mat4_cast(rotation) * 
-        glm::scale(glm::mat4(1.0f), scale); 
+    glm::vec3 skew;
+    glm::vec4 perspective;
+    return glm::decompose(matrix, scale, rotation, position, skew, perspective);
+}
+
+void DDing::Transform::MakeDirty()
+{
+    if (isDirty)
+        return;
+
+    isDirty = true;
+    for (auto child : children)
+        child->MakeDirty();
+}
+
+void DDing::Transform::RecalculateMatrices()
+{
+    if (!isDirty) return;
+
+    cachedLocalMatrix =  glm::scale(glm::translate(glm::mat4(1.0f), localPosition) *
+            glm::mat4(localRotation), localScale);
+
+    if (parent) {
+        cachedWorldMatrix = parent->GetWorldMatrix() * cachedLocalMatrix;
+    }
+    else {
+        cachedWorldMatrix = cachedLocalMatrix;
+    }
+
+    DecomposeMatrix(cachedWorldMatrix, worldPosition, worldRotation, worldScale);
+
+    isDirty = false;
+
 }

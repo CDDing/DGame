@@ -7,17 +7,56 @@ namespace DDing {
 		Transform();
 		~Transform();
 
-		glm::vec3 GetScale() { return scale; }
-		void SetScale(const glm::vec3& worldScale) { scale = worldScale; UpdateLocalTransform(); }
-		glm::quat GetRotation() { return rotation; }
-		void SetRotation(const glm::quat& worldRotation) { rotation = worldRotation; UpdateLocalTransform(); }
-		glm::vec3 GetPosition() { return position; }
-		void SetPosition(const glm::vec3& worldPosition) { position = worldPosition; UpdateLocalTransform(); }
-		glm::mat4 GetTransformMatrix() { return localTransform; }
+		glm::vec3 GetLocalScale() { return localScale; }
+		void SetLocalScale(const glm::vec3& localScale) { this->localScale = localScale; MakeDirty(); }
+		glm::quat GetLocalRotation() { return localRotation; }
+		void SetLocalRotation(const glm::quat& localRotation) { this->localRotation = localRotation; MakeDirty(); }
+		glm::vec3 GetLocalPosition() { return localPosition; }
+		void SetLocalPosition(const glm::vec3& localPosition) { this->localPosition = localPosition; MakeDirty(); }
+		glm::mat4 GetLocalMatrix() { return localTransform; }
+		
+		
+		auto& GetWorldPosition() {
+			if (isDirty)
+				RecalculateMatrices();
+			return worldPosition;
+		}
 
-		glm::vec3 GetRight() { return glm::normalize(rotation * glm::vec3(-1, 0, 0)); }
-		glm::vec3 GetUp() { return glm::normalize(rotation * glm::vec3(0, 1, 0)); }
-		glm::vec3 GetLook() { return glm::normalize(rotation * glm::vec3(0,0,-1)); }
+		glm::vec3 GetWorldEulerAngle() {
+			if (isDirty)
+				RecalculateMatrices();
+			return glm::eulerAngles(worldRotation);
+		}
+
+		auto GetWorldRotation() {
+			if (isDirty)
+				RecalculateMatrices();
+			return worldRotation;
+		}
+		auto GetWorldScale() {
+			if (isDirty)
+				RecalculateMatrices();
+			return worldScale;
+		}
+		
+		glm::mat4 GetWorldMatrix() { 
+			if (isDirty)
+				RecalculateMatrices();
+			return cachedWorldMatrix; 
+		}
+
+		glm::vec3 GetRight() { 
+			if (isDirty)
+				RecalculateMatrices();
+			return glm::normalize(worldRotation * glm::vec3(-1, 0, 0)); }
+		glm::vec3 GetUp() { 
+			if (isDirty)
+				RecalculateMatrices();
+			return glm::normalize(worldRotation * glm::vec3(0, 1, 0)); }
+		glm::vec3 GetLook() { 
+			if (isDirty)
+				RecalculateMatrices();
+			return glm::normalize(worldRotation * glm::vec3(0,0,-1)); }
 
 		virtual void Update() override;
 
@@ -32,13 +71,24 @@ namespace DDing {
 		Transform* GetParent() { return parent; }
 		const std::vector<Transform*>& GetChildren() { return children; }
 	private:
+		bool DecomposeMatrix(const glm::mat4& matrix, glm::vec3& position, glm::quat& rotation, glm::vec3& scale);
 
-		glm::vec3 position;
-		glm::quat rotation;
-		glm::vec3 scale;
+		glm::vec3 localPosition = glm::vec3(0.0f);
+		glm::quat localRotation = { 1.0f,0.0f,0.0f,0.0f };
+		glm::vec3 localScale = glm::vec3(1.0f);
+
+		glm::vec3 worldPosition = {};
+		glm::quat worldRotation = {};
+		glm::vec3 worldScale = {};
+
+		glm::mat4 cachedLocalMatrix = { 1.0f };
+		glm::mat4 cachedWorldMatrix = { 1.0f };
+		bool isDirty = true;
+
+		void MakeDirty();
+		void RecalculateMatrices();
 
 
-		void UpdateLocalTransform();
 		glm::mat4 localTransform;
 
 		Transform* parent = nullptr;

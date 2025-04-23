@@ -60,7 +60,7 @@ GLFWwindow* Game::initWindow()
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Don't create OpenGL context
-    GLFWwindow* initializedWindow = glfwCreateWindow(800, 600, "Vulkan Window", nullptr, nullptr);
+    GLFWwindow* initializedWindow = glfwCreateWindow(1600, 900, "Vulkan Window", nullptr, nullptr);
     if (!initializedWindow) {
         glfwTerminate();
         throw std::runtime_error("Failed to create GLFW window");

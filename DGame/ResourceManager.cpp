@@ -15,8 +15,18 @@ LoadedGLTF::LoadedGLTF(const std::string path)
     tinygltf::TinyGLTF loader;
     std::string err;
     std::string warn;
+    std::string lower = path;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
 
-    bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
+    bool ret = false;
+    if (lower.size() >= 5 && lower.substr(lower.size() - 5) == ".gltf") {
+        ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
+    }
+    else if (lower.size() >= 4 && lower.substr(lower.size() - 4) == ".glb") {
+        ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
+    }
+
+
     if (!warn.empty())
         std::cout << "Tiny Warning ! : " << warn << std::endl;
 
@@ -197,22 +207,18 @@ void LoadedGLTF::LoadNodes(const tinygltf::Model& model)
         if (!node.translation.empty() || !node.rotation.empty() || !node.scale.empty()) {
             auto transform = gameObject->GetComponent<DDing::Transform>();
             if (node.translation.size() == 3)
-                transform->SetPosition({
+                transform->SetLocalPosition({
                     static_cast<float>(node.translation[0]),
-                    -static_cast<float>(node.translation[1]),
+                    static_cast<float>(node.translation[1]),
                     static_cast<float>(node.translation[2])
                     });
             
-            if (node.rotation.size() == 4)
-                transform->SetRotation({
-                    static_cast<float>(node.rotation[0]),
-                    static_cast<float>(node.rotation[1]),
-                    static_cast<float>(node.rotation[2]),
-                    static_cast<float>(node.rotation[3])
-                    });
-
+            if (node.rotation.size() == 4) {
+                glm::quat q = glm::quat(node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
+                transform->SetLocalRotation(q);
+            }
             if (node.scale.size() == 3)
-                transform->SetScale({
+                transform->SetLocalScale({
                     static_cast<float>(node.scale[0]),
                     static_cast<float>(node.scale[1]),
                     static_cast<float>(node.scale[2])
@@ -491,5 +497,5 @@ void LoadedGLTF::InitBuffer()
 
 void ResourceManager::Init()
 {
-    gltfs.push_back(LoadedGLTF("Resources/ABeautifulGame/ABeautifulGame.gltf"));
+    gltfs.push_back(LoadedGLTF("Resources/NodePerformanceTest/NodePerformanceTest.glb"));
 }
