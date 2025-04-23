@@ -144,13 +144,15 @@ void InputManager::Update()
 
 			ImGui::End();
 		}
-		ImGui::Render();
 	}
-	//Handle Keyboard
+	//Inspector
 	{
+		ImGui::Begin("Inspector");
 		if (selectedObject) {
 		}
+		ImGui::End();
 	}
+	ImGui::Render();
 }
 void InputManager::Init()
 {
@@ -186,9 +188,9 @@ void InputManager::Init()
 		ImGui_ImplVulkan_Init(&initInfo);
 	}
 	{
-		glfwSetKeyCallback(DGame->context.window, KeyCallback);/*
+		glfwSetKeyCallback(DGame->context.window, KeyCallback);
 		glfwSetMouseButtonCallback(DGame->context.window, MouseButtonCallback);
-		glfwSetCursorPosCallback(DGame->context.window, CursorPosCallback);*/
+		glfwSetCursorPosCallback(DGame->context.window, CursorPosCallback);
 	}
 }
 
@@ -421,17 +423,20 @@ void InputManager::DrawSceneHierarchy(DDing::GameObject* gameObject)
 
 void InputManager::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
 	keyPressed[key] = action;
 }
 
 void InputManager::CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
+	ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
 	mouseX = xpos;
 	mouseY = ypos;
 }
 
 void InputManager::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
+	ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 	if (button < 0 || button >= 3) return;
 	mouseButtons[button] = (action == GLFW_PRESS);
 }
