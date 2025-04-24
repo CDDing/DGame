@@ -10,6 +10,11 @@ void DDing::Camera::Update()
 	UploadToStaging();
 }
 
+void DDing::Camera::DrawUI()
+{
+	ImGui::CollapsingHeader("Camera");
+}
+
 void DDing::Camera::UpdateMatrix()
 {
 	auto transform = gameObject->GetComponent<DDing::Transform>();

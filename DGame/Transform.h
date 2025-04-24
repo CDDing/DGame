@@ -7,16 +7,16 @@ namespace DDing {
 		Transform();
 		~Transform();
 
-		glm::vec3 GetLocalScale() { return localScale; }
+		glm::vec3 GetLocalScale() const { return localScale; }
 		void SetLocalScale(const glm::vec3& localScale) { this->localScale = localScale; MakeDirty(); }
-		glm::quat GetLocalRotation() { return localRotation; }
+		glm::quat GetLocalRotation() const { return localRotation; }
 		void SetLocalRotation(const glm::quat& localRotation) { this->localRotation = localRotation; MakeDirty(); }
-		glm::vec3 GetLocalPosition() { return localPosition; }
+		glm::vec3 GetLocalPosition() const { return localPosition; }
 		void SetLocalPosition(const glm::vec3& localPosition) { this->localPosition = localPosition; MakeDirty(); }
-		glm::mat4 GetLocalMatrix() { return localTransform; }
+		glm::mat4 GetLocalMatrix() const { return cachedLocalMatrix; }
 		
 		
-		auto& GetWorldPosition() {
+		auto GetWorldPosition() {
 			if (isDirty)
 				RecalculateMatrices();
 			return worldPosition;
@@ -68,6 +68,12 @@ namespace DDing {
 			children.push_back(child);
 			child->parent = this;
 		}
+		void DrawUI() override;
+
+		void RemoveChild(Transform* child) {
+			children.erase(std::remove(children.begin(), children.end(), child), children.end());
+			child->parent = nullptr;
+		}
 		Transform* GetParent() { return parent; }
 		const std::vector<Transform*>& GetChildren() { return children; }
 	private:
@@ -75,6 +81,7 @@ namespace DDing {
 
 		glm::vec3 localPosition = glm::vec3(0.0f);
 		glm::quat localRotation = { 1.0f,0.0f,0.0f,0.0f };
+		glm::vec3 localEulerAngle = {};
 		glm::vec3 localScale = glm::vec3(1.0f);
 
 		glm::vec3 worldPosition = {};
@@ -89,7 +96,6 @@ namespace DDing {
 		void RecalculateMatrices();
 
 
-		glm::mat4 localTransform;
 
 		Transform* parent = nullptr;
 		std::vector<Transform*> children;

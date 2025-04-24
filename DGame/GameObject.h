@@ -30,6 +30,7 @@ namespace DDing {
 		}
 
 		void Draw(vk::CommandBuffer commandBuffer);
+		auto& GetComponents() { return components; }
 		
 		bool isActive = true;
 		std::string name = "UNINITIALIZED";

@@ -9,7 +9,7 @@ namespace DDing {
 		
 		virtual void Update() override;
 
-
+		void DrawUI() override;
 	private:
 		void UpdateMatrix();
 		void UploadToStaging();
