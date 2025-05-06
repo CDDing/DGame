@@ -147,46 +147,16 @@ void InputManager::Update()
 	{
 		ImGui::Begin("Inspector");
 		if (selectedObject) {
+			ImGui::Text(selectedObject->name.c_str());
+			ImGui::Checkbox("IsActive", &selectedObject->isActive);
+
 
 			auto& components = selectedObject->GetComponents();
 
 			for (auto& [type, component] : components) {
 				component->DrawUI();
 			}
-			// Show Transform Data
-			//ImGui::Text("Transform");
 
-			//auto transform = selectedObject->GetComponent<DDing::Transform>();
-
-			//glm::vec3 pos = transform->GetLocalPosition();
-			//glm::vec3 rot = glm::eulerAngles(transform->GetLocalRotation()); // Quaternion → Euler 변환
-			//glm::vec3 scale = transform->GetLocalScale();
-
-			//if (ImGui::DragFloat3("Position", &pos[0], 0.1f)) {
-			//	transform->SetLocalPosition(pos);
-			//}
-			//if (ImGui::DragFloat3("Rotation (Euler)", &rot[0], 0.1f)) {
-			//	transform->SetLocalRotation(glm::quat(rot)); // Euler → Quaternion 변환
-			//}
-			//if (ImGui::DragFloat3("Scale", &scale[0], 0.1f)) {
-			//	transform->SetLocalScale(scale);
-			//}
-			// Show components of the selected GameObject
-			//auto componentNames = selectedObject->GetComponentNames();
-			//for (const auto& name : componentNames) {
-			//	if (ImGui::CollapsingHeader(name.c_str())) {
-			//		auto component = selectedObject->GetComponentByName(name);
-			//		if (name == "MeshRenderer") {
-			//			// Handle specific UI for MeshRenderer (for example, material properties)
-			//			auto meshRenderer = selectedObject->GetComponent<MeshRenderer>();
-			//			if (meshRenderer) {
-			//				// Example: Display mesh-related data (this depends on your MeshRenderer implementation)
-			//				ImGui::Text("Mesh: %s", meshRenderer->GetMeshName().c_str());
-			//			}
-			//		}
-			//		// Add other component-specific UI handling as needed
-			//	}
-			//}
 
 		}
 		ImGui::End();

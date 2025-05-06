@@ -2,6 +2,7 @@
 #include "GameObject.h"
 #include "Transform.h"
 #include "MeshRenderer.h"
+#include "MonoBehaviour.h"
 DDing::GameObject::GameObject()
 {
     AddComponent<Transform>();
@@ -17,10 +18,16 @@ void DDing::GameObject::Update()
         component->Update();
     }
 
+    for (auto& script : scripts) {
+        script->Update();
+    }
+
 }
 
 void DDing::GameObject::Draw(vk::CommandBuffer commandBuffer)
 {
+    if (!isActive) return;
+
     auto meshRenderer = GetComponent<DDing::MeshRenderer>();
     //Draw
     if (meshRenderer){

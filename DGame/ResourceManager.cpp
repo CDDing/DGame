@@ -128,74 +128,74 @@ void LoadedGLTF::LoadMeshes(const tinygltf::Model& model)
             std::vector<DDing::Vertex> vertices;
             std::vector<uint32_t> indices;
 
-            //Index
-            {
-                if (primitive.indices >= 0) {
-                    const auto& accessor = model.accessors[primitive.indices];
-                    const auto& bufferView = model.bufferViews[accessor.bufferView];
-                    const auto& buffer = model.buffers[bufferView.buffer];
+//Index
+{
+    if (primitive.indices >= 0) {
+        const auto& accessor = model.accessors[primitive.indices];
+        const auto& bufferView = model.bufferViews[accessor.bufferView];
+        const auto& buffer = model.buffers[bufferView.buffer];
 
-                    const uint8_t* dataPtr = buffer.data.data() + bufferView.byteOffset + accessor.byteOffset;
-                    size_t count = accessor.count;
+        const uint8_t* dataPtr = buffer.data.data() + bufferView.byteOffset + accessor.byteOffset;
+        size_t count = accessor.count;
 
-                    if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
-                        const uint16_t* buf = reinterpret_cast<const uint16_t*>(dataPtr);
-                        for (size_t i = 0; i < count; ++i)
-                            indices.push_back(static_cast<uint32_t>(buf[i]));
-                    }
-                    else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
-                        const uint32_t* buf = reinterpret_cast<const uint32_t*>(dataPtr);
-                        for (size_t i = 0; i < count; ++i)
-                            indices.push_back(buf[i]);
-                    }
-                }
+        if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+            const uint16_t* buf = reinterpret_cast<const uint16_t*>(dataPtr);
+            for (size_t i = 0; i < count; ++i)
+                indices.push_back(static_cast<uint32_t>(buf[i]));
+        }
+        else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
+            const uint32_t* buf = reinterpret_cast<const uint32_t*>(dataPtr);
+            for (size_t i = 0; i < count; ++i)
+                indices.push_back(buf[i]);
+        }
+    }
             }
 
-            //Vertex
-            std::vector<glm::vec3> positions, normals;
-            std::vector<glm::vec2> texcoords;
-            {
-                for (const auto& attr : primitive.attributes) {
-                    const std::string& attrName = attr.first;
-                    const auto& accessor = model.accessors[attr.second];
-                    const auto& bufferView = model.bufferViews[accessor.bufferView];
-                    const auto& buffer = model.buffers[bufferView.buffer];
+//Vertex
+std::vector<glm::vec3> positions, normals;
+std::vector<glm::vec2> texcoords;
+{
+    for (const auto& attr : primitive.attributes) {
+        const std::string& attrName = attr.first;
+        const auto& accessor = model.accessors[attr.second];
+        const auto& bufferView = model.bufferViews[accessor.bufferView];
+        const auto& buffer = model.buffers[bufferView.buffer];
 
-                    const uint8_t* dataPtr = buffer.data.data() + bufferView.byteOffset + accessor.byteOffset;
+        const uint8_t* dataPtr = buffer.data.data() + bufferView.byteOffset + accessor.byteOffset;
 
-                    if (attrName == "POSITION") {
-                        for (size_t i = 0; i < accessor.count; ++i) {
-                            const float* elem = reinterpret_cast<const float*>(dataPtr + i * accessor.ByteStride(bufferView));
-                            positions.emplace_back(elem[0], elem[1], elem[2]);
-                        }
-                    }
-                    else if (attrName == "NORMAL") {
-                        for (size_t i = 0; i < accessor.count; ++i) {
-                            const float* elem = reinterpret_cast<const float*>(dataPtr + i * accessor.ByteStride(bufferView));
-                            normals.emplace_back(elem[0], elem[1], elem[2]);
-                        }
-                    }
-                    else if (attrName == "TEXCOORD_0") {
-                        for (size_t i = 0; i < accessor.count; ++i) {
-                            const float* elem = reinterpret_cast<const float*>(dataPtr + i * accessor.ByteStride(bufferView));
-                            texcoords.emplace_back(elem[0], elem[1]);
-                        }
-                    }
-                }
-
-                // 3. Combine attributes into Vertex struct
-                for (size_t i = 0; i < positions.size(); ++i) {
-                    DDing::Vertex v{};
-                    v.position = positions[i];
-                    v.normal = i < normals.size() ? normals[i] : glm::vec3(0.0f);
-                    v.texcoord = i < texcoords.size() ? texcoords[i] : glm::vec2(0.0f);
-                    vertices.push_back(v);
-                }
-
+        if (attrName == "POSITION") {
+            for (size_t i = 0; i < accessor.count; ++i) {
+                const float* elem = reinterpret_cast<const float*>(dataPtr + i * accessor.ByteStride(bufferView));
+                positions.emplace_back(elem[0], elem[1], elem[2]);
             }
-            auto loadedPrimitive = std::make_unique<DDing::Primitive>(vertices, indices);
-            loadedPrimitive->materialIndex = primitive.material;
-            loadedMesh->addPrimitive(std::move(loadedPrimitive));
+        }
+        else if (attrName == "NORMAL") {
+            for (size_t i = 0; i < accessor.count; ++i) {
+                const float* elem = reinterpret_cast<const float*>(dataPtr + i * accessor.ByteStride(bufferView));
+                normals.emplace_back(elem[0], elem[1], elem[2]);
+            }
+        }
+        else if (attrName == "TEXCOORD_0") {
+            for (size_t i = 0; i < accessor.count; ++i) {
+                const float* elem = reinterpret_cast<const float*>(dataPtr + i * accessor.ByteStride(bufferView));
+                texcoords.emplace_back(elem[0], elem[1]);
+            }
+        }
+    }
+
+    // 3. Combine attributes into Vertex struct
+    for (size_t i = 0; i < positions.size(); ++i) {
+        DDing::Vertex v{};
+        v.position = positions[i];
+        v.normal = i < normals.size() ? normals[i] : glm::vec3(0.0f);
+        v.texcoord = i < texcoords.size() ? texcoords[i] : glm::vec2(0.0f);
+        vertices.push_back(v);
+    }
+
+}
+auto loadedPrimitive = std::make_unique<DDing::Primitive>(vertices, indices);
+loadedPrimitive->materialIndex = primitive.material;
+loadedMesh->addPrimitive(std::move(loadedPrimitive));
         }
         meshes.push_back(std::move(loadedMesh));
     }
@@ -215,7 +215,7 @@ void LoadedGLTF::LoadNodes(const tinygltf::Model& model)
                     static_cast<float>(node.translation[1]),
                     static_cast<float>(node.translation[2])
                     });
-            
+
             if (node.rotation.size() == 4) {
                 glm::quat q = glm::quat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
                 transform->SetLocalRotation(q);
@@ -227,7 +227,9 @@ void LoadedGLTF::LoadNodes(const tinygltf::Model& model)
                     static_cast<float>(node.scale[2])
                     });
 
-
+            if (!node.matrix.empty()){
+                //TODO
+            }
         }
 
         if (node.mesh >= 0) {

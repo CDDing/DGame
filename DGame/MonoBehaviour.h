@@ -1,5 +1,10 @@
 #pragma once
-class MonoBehaviour
-{
-};
+namespace DDing {
+	class MonoBehaviour : public Component
+	{
+	public:
+		void Update() override;
+	private:
+	};
+}
 

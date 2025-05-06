@@ -1,6 +1,7 @@
 #pragma once
 #include <typeindex>
 namespace DDing {
+	class MonoBehaviour;
 	class GameObject
 	{
 	public:
@@ -36,7 +37,7 @@ namespace DDing {
 		std::string name = "UNINITIALIZED";
 	protected:
 		std::unordered_map<std::type_index, std::unique_ptr<Component>> components;
-		
+		std::vector <std::unique_ptr<MonoBehaviour>> scripts;
 	};
 }
 
