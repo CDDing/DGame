@@ -31,7 +31,9 @@ layout(buffer_reference, scalar) readonly buffer VertexBuffer{
 Vertex vertices[];
 };
 
-layout(location = 0) out vec2 outUV;
+layout(location = 0) out vec3 outWorldPos;
+layout(location = 1) out vec2 outUV;
+layout(location = 2) out vec3 outNormal;
 
 void main() {
     // Predefined triangle in clip space
@@ -39,5 +41,8 @@ void main() {
     Vertex v = vb.vertices[gl_VertexIndex];
 
     gl_Position = ubo.projection * ubo.view * pushConst.modelMatrix * vec4(v.position,1.0);
+    
+    outWorldPos = (pushConst.modelMatrix * vec4(v.position,1.0)).xyz;
     outUV = v.texcoord;
+    outNormal = (inverse(mat3(pushConst.modelMatrix))) * normalize(v.normal);
 }

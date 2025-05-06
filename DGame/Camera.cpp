@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Camera.h"
 #include "Transform.h"
+#include "Light.h"
 glm::mat4 DDing::Camera::View = glm::mat4();
 glm::mat4 DDing::Camera::Projection = glm::mat4();
 void DDing::Camera::Update()
@@ -25,7 +26,7 @@ void DDing::Camera::UpdateMatrix()
 	View = glm::lookAtLH(eyePosition, focusDirection, upDirection);
 
 	//if needed, Orthogonal add
-	Projection = glm::perspectiveFovLH(glm::radians(70.0f), static_cast<float>(DGame->swapChain.extent.width), static_cast<float>(DGame->swapChain.extent.height), 0.1f, 10000.0f);
+	Projection = glm::perspectiveFovLH(glm::radians(70.0f), static_cast<float>(DGame->swapChain.extent.width), static_cast<float>(DGame->swapChain.extent.height), 0.0001f, 10000.0f);
 
 	Projection[1][1] *= -1;
 }
@@ -38,7 +39,22 @@ void DDing::Camera::UploadToStaging()
 	memcpy((char*)mappedData + offsetof(GlobalBuffer, view), &View, sizeof(glm::mat4));
 	memcpy((char*)mappedData + offsetof(GlobalBuffer, projection), &Projection, sizeof(glm::mat4));
 	memcpy((char*)mappedData + offsetof(GlobalBuffer, cameraPosition), &eyePosition, sizeof(glm::vec3));
-	
+
+	//Lights, TODO location needed change
+	int cnt = 0;
+	sLight lights[10];
+	for (auto& go : DGame->scene.currentScene->GetNodes()) {
+		auto lightComponent = go->GetComponent<DDing::Light>();
+		if (lightComponent) {
+			lights[cnt].color = lightComponent->color;
+			lights[cnt].intensity = lightComponent->intensity;
+			lights[cnt].position = go->GetComponent<DDing::Transform>()->GetWorldPosition();
+			cnt++;
+		}
+	}
+
+	memcpy((char*)mappedData + offsetof(GlobalBuffer, lights), lights, sizeof(sLight) * 10);
+	memcpy((char*)mappedData + offsetof(GlobalBuffer, numLights), &cnt, sizeof(int));
 }
 
 void DDing::Camera::UpdatePosition()

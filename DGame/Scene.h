@@ -12,6 +12,7 @@ namespace DDing {
 		void AddRootNode(std::unique_ptr<DDing::GameObject> rootNode);
 		void AddNode(std::unique_ptr<DDing::GameObject>& node);
 		auto& GetRootNodes() { return rootNodes; }
+		auto& GetNodes() { return nodes; }
 		void Update();
 
 		vk::DescriptorSet gltfDescriptor;
