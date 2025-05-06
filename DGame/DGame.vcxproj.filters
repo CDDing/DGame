@@ -129,6 +129,9 @@
     <ClCompile Include="..\include\backends\imgui_impl_vulkan.cpp">
       <Filter>소스 파일\Input\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>소스 파일\Component</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h">
@@ -189,6 +192,9 @@
       <Filter>소스 파일\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Transform.h">
+      <Filter>소스 파일\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
       <Filter>소스 파일\Component</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,6 +2,7 @@
 #include "InputManager.h"
 #include "GameObject.h"
 #include "Transform.h"
+#include "Light.h"
 
 bool InputManager::keyPressed[256] = { false };
 bool InputManager::mouseButtons[3] = { false };
@@ -103,10 +104,16 @@ void InputManager::Update()
 
 		//Scene
 		{
-			ImGui::Begin("Scene");
+			ImGui::Begin("Hierarchy");
 			for (auto& obj : DGame->scene.currentScene->GetRootNodes())
 			{
 				DrawSceneHierarchy(obj);
+			}
+
+			if (ImGui::Button("Add GameObject")) {
+				auto go = std::make_unique<DDing::GameObject>();
+				DGame->scene.currentScene->AddRootNode(std::move(go));
+		
 			}
 			ImGui::End();
 
@@ -147,7 +154,7 @@ void InputManager::Update()
 	{
 		ImGui::Begin("Inspector");
 		if (selectedObject) {
-			ImGui::Text(selectedObject->name.c_str());
+			ImGui::InputText("Name", &selectedObject->name);
 			ImGui::Checkbox("IsActive", &selectedObject->isActive);
 
 
@@ -157,6 +164,19 @@ void InputManager::Update()
 				component->DrawUI();
 			}
 
+			if (ImGui::Button("Add Component")) {
+				ImGui::OpenPopup("Component Selection");
+			}
+
+			if (ImGui::BeginPopup("Component Selection")) {
+				//TODO delete already existed components.
+				if (ImGui::Selectable("Light")) {
+					selectedObject->AddComponent<DDing::Light>();
+					ImGui::CloseCurrentPopup(); 
+				}
+
+				ImGui::EndPopup();  // End the popup
+			}
 
 		}
 		ImGui::End();

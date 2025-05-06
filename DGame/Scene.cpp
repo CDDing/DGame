@@ -18,6 +18,12 @@ void DDing::Scene::AddRootNode(DDing::GameObject* rootNode)
 	rootNodes.push_back(rootNode);
 }
 
+void DDing::Scene::AddRootNode(std::unique_ptr<DDing::GameObject> rootNode)
+{
+	rootNodes.push_back(rootNode.get());
+	nodes.push_back(std::move(rootNode));
+}
+
 void DDing::Scene::AddNode(std::unique_ptr<DDing::GameObject>& node)
 {
 	nodes.push_back(std::move(node));
