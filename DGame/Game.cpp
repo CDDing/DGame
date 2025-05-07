@@ -14,8 +14,8 @@ Game::~Game()
 
 void Game::Init()
 {
-    render.Init();
     input.Init();
+    render.Init();
 
     //TODO integrate with GUI when load GLTF
     resource.Init();

@@ -46,6 +46,13 @@ void RenderManager::DrawFrame(DDing::Scene* scene, DDing::PassType passType)
 
     currentFrame = (currentFrame + 1) % FRAME_CNT;
 }
+void RenderManager::DrawUI()
+{
+    for (auto& element : passes) {
+        auto& pass = element.second;
+        pass->DrawUI();
+    }
+}
 void RenderManager::initRenderPasses()
 {
     //Default
@@ -59,6 +66,16 @@ void RenderManager::initRenderPasses()
         colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
         colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
         colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+
+        vk::AttachmentDescription depthGUIAttachment{};
+        depthGUIAttachment.format = DDing::ForwardPass::ColorFormat;
+        depthGUIAttachment.samples = vk::SampleCountFlagBits::e1;
+        depthGUIAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+        depthGUIAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+        depthGUIAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+        depthGUIAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+        depthGUIAttachment.initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        depthGUIAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
         vk::AttachmentDescription depthAttachment{};
         depthAttachment.format = DDing::ForwardPass::DepthFormat;
@@ -74,14 +91,19 @@ void RenderManager::initRenderPasses()
         colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
+        vk::AttachmentReference depthGUIAttachmentRef{};
+        depthGUIAttachmentRef.attachment = 1;
+        depthGUIAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
         vk::AttachmentReference depthAttachmentRef{};
-        depthAttachmentRef.attachment = 1;
+        depthAttachmentRef.attachment = 2;
         depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+        std::vector<vk::AttachmentReference> colorAttachments{ colorAttachmentRef, depthGUIAttachmentRef };
 
         vk::SubpassDescription subpass{};
         subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
+        subpass.setColorAttachments(colorAttachments);
         subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
         vk::SubpassDependency dependency{};
@@ -92,7 +114,7 @@ void RenderManager::initRenderPasses()
         dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
         dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 
-        std::vector<vk::AttachmentDescription> attachments = { colorAttachment,depthAttachment };
+        std::vector<vk::AttachmentDescription> attachments = { colorAttachment, depthGUIAttachment, depthAttachment };
         vk::RenderPassCreateInfo renderPassInfo{};
         renderPassInfo.setAttachments(attachments);
         renderPassInfo.setSubpasses(subpass);
@@ -197,11 +219,23 @@ void RenderManager::initPipelines()
         colorBlendAttachment.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
         colorBlendAttachment.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
         colorBlendAttachment.setAlphaBlendOp(vk::BlendOp::eAdd);
+
+        vk::PipelineColorBlendAttachmentState GUIBlendAttachment{};
+        GUIBlendAttachment.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+        GUIBlendAttachment.setBlendEnable(vk::False);
+        GUIBlendAttachment.setSrcColorBlendFactor(vk::BlendFactor::eOne);
+        GUIBlendAttachment.setDstColorBlendFactor(vk::BlendFactor::eZero);
+        GUIBlendAttachment.setColorBlendOp(vk::BlendOp::eAdd);
+        GUIBlendAttachment.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
+        GUIBlendAttachment.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
+        GUIBlendAttachment.setAlphaBlendOp(vk::BlendOp::eAdd);
         
+        std::vector<vk::PipelineColorBlendAttachmentState> attachments{ colorBlendAttachment,GUIBlendAttachment };
+
         vk::PipelineColorBlendStateCreateInfo colorBlending{};
         colorBlending.setLogicOpEnable(vk::False);
         colorBlending.setLogicOp(vk::LogicOp::eCopy);
-        colorBlending.setAttachments(colorBlendAttachment);
+        colorBlending.setAttachments(attachments);
         colorBlending.setBlendConstants({ 0 });
         pipelineDesc.colorBlend = colorBlending;
 

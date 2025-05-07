@@ -40,6 +40,7 @@ public:
 	RenderManager() {};
 	void Init();
 	void DrawFrame(DDing::Scene* scene, DDing::PassType passType);
+	void DrawUI();
 
 	uint32_t currentFrame = 0;
 	//TODO

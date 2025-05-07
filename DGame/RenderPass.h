@@ -7,6 +7,7 @@ namespace DDing {
 		RenderPass() {};
 		virtual ~RenderPass() = default;
 		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene* scene) = 0;
+		virtual void DrawUI() {};
 		
 		DDing::Image& GetOutputImage();
 
@@ -14,6 +15,7 @@ namespace DDing {
 		RenderPass(Pipeline& pipeline, vk::RenderPass renderPass) : pipeline(&pipeline), renderPass(renderPass) {};
 		Pipeline* pipeline = nullptr;
 		vk::RenderPass renderPass = nullptr;
+		virtual void createOutputImages();
 		std::vector<DDing::Image> outputImages;
 	};
 	class ForwardPass : public RenderPass
@@ -27,12 +29,19 @@ namespace DDing {
 		static vk::Format DepthFormat;
 		static vk::Format ColorFormat;
 		ForwardPass(Pipeline& pipeline, vk::RenderPass renderPass);
+		~ForwardPass() override;
 		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene* scene);
+		void DrawUI() override;
 	protected:
 		void createDepthImage();
-		void createOutputImages();
 		void createFramebuffers();
+		
+		void initDepthImageGUI();
 		DDing::Image depthImage;
+
+		vk::raii::Sampler depthImageSampler = nullptr;
+		std::vector<VkDescriptorSet> depthImageDescriptorSet;
+		std::vector<DDing::Image> depthImageGUI;
 		
 		std::vector<vk::raii::Framebuffer> framebuffers;
 
@@ -42,6 +51,19 @@ namespace DDing {
 	public:
 		DeferredPass(Pipeline& pipeline, vk::RenderPass renderPass);
 		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene* scene);
+	};
+	class ShadowPass : public RenderPass
+	{
+	public:
+		ShadowPass(Pipeline& pipeline, vk::RenderPass renderPass);
+		virtual void Render(vk::CommandBuffer commandBuffer, DDing::Scene* scene);
+
+		void createOutputImages() override;
+	protected:
+		void createFramebuffers();
+
+		std::vector<vk::raii::Framebuffer> framebuffers;
+
 	};
 }
 

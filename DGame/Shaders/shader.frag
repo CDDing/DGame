@@ -50,6 +50,7 @@ layout(location = 1) in vec2 inUV;
 layout(location = 2) in vec3 inNormal;
 
 layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outDepth;
 
 
 const float PI = 3.14159265359;
@@ -174,4 +175,9 @@ void main() {
     color = pow(color, vec3(1.0/2.2)); 
 
     outColor= vec4(color, 1.0);
+
+    //Draw Depth
+    vec4 viewPos = ubo.view * vec4(inWorldPos, 1.0);
+    float depthValue = viewPos.z;
+    outDepth = vec4(depthValue, depthValue, depthValue, 1);
 }

@@ -39,6 +39,8 @@
 #include <string>
 #include <utility>
 
+#define MAX_LIGHTS 4
+
 #include "Structs.h"
 #include "Game.h"
 #include "RenderPass.h"

@@ -181,6 +181,13 @@ void InputManager::Update()
 		}
 		ImGui::End();
 	}
+
+	//RenderManager
+	{
+		ImGui::Begin("RenderManager");
+		DGame->render.DrawUI();
+		ImGui::End();
+	}
 	ImGui::Render();
 }
 void InputManager::Init()
@@ -281,7 +288,7 @@ void InputManager::createImGuiResources()
 	{
 		VkDescriptorPoolSize pool_sizes[] =
 		{
-			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000*IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE },
 		};
 		VkDescriptorPoolCreateInfo pool_info = {};
 		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
