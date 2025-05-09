@@ -12,7 +12,6 @@ namespace DDing {
 		void DrawUI() override;
 	private:
 		void UpdateMatrix();
-		void UploadToStaging();
 		void UpdatePosition();
 		void UpdateTransform();
 		void UpdateRotation();

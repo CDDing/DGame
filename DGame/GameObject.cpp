@@ -24,7 +24,7 @@ void DDing::GameObject::Update()
 
 }
 
-void DDing::GameObject::Draw(vk::CommandBuffer commandBuffer)
+void DDing::GameObject::Draw(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout)
 {
     if (!isActive) return;
 
@@ -37,7 +37,7 @@ void DDing::GameObject::Draw(vk::CommandBuffer commandBuffer)
 
         auto transformMatrix = GetComponent<DDing::Transform>()->GetWorldMatrix();
 
-        mesh->Draw(commandBuffer, transformMatrix, *DGame->render.currentPipeline->GetLayout());
+        mesh->Draw(commandBuffer, transformMatrix, pipelineLayout);
     }
 
     auto transform = GetComponent<DDing::Transform>();
@@ -45,7 +45,7 @@ void DDing::GameObject::Draw(vk::CommandBuffer commandBuffer)
 
 
         assert(child->GetGameObject());
-        child->GetGameObject()->Draw(commandBuffer);
+        child->GetGameObject()->Draw(commandBuffer, pipelineLayout);
     }
 
 }

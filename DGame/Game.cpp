@@ -14,15 +14,14 @@ Game::~Game()
 
 void Game::Init()
 {
+    //TODO integrate with GUI when load GLTF
+    resource.Init();
     input.Init();
     render.Init();
 
-    //TODO integrate with GUI when load GLTF
-    resource.Init();
 
     auto tempScene = std::make_unique<DDing::Scene>();
     tempScene->LoadSceneFromGLTF(resource.gltfs[0]);
-    tempScene->gltfDescriptor = *resource.gltfs[0].descriptorSet;
     scene.currentScene = tempScene.get();
     scene.AddScene(std::move(tempScene));
     
@@ -50,7 +49,7 @@ void Game::Update()
 
 void Game::Render()
 {
-    render.DrawFrame(scene.scenes[0].get(), DDing::PassType::Default);
+    render.DrawFrame(scene.scenes[0].get());
 }
 
 GLFWwindow* Game::initWindow()

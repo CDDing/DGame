@@ -132,6 +132,15 @@
     <ClCompile Include="Light.cpp">
       <Filter>소스 파일\Component</Filter>
     </ClCompile>
+    <ClCompile Include="ShadowPass.cpp">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="ForwardPass.cpp">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="DeferredPass.cpp">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h">
@@ -197,6 +206,15 @@
     <ClInclude Include="Light.h">
       <Filter>소스 파일\Component</Filter>
     </ClInclude>
+    <ClInclude Include="ForwardPass.h">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="DeferredPass.h">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowPass.h">
+      <Filter>소스 파일\RenderPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\shader.frag">
@@ -206,5 +224,11 @@
       <Filter>소스 파일\Shaders</Filter>
     </None>
     <None Include="ClassDiagram.cd" />
+    <None Include="Shaders\DepthOnly.frag">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
+    <None Include="Shaders\DepthOnly.vert">
+      <Filter>소스 파일\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

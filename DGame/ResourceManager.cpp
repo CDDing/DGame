@@ -43,8 +43,44 @@ LoadedGLTF::LoadedGLTF(const std::string path)
     LoadMeshes(model);
     LoadNodes(model);
     InitBuffer();
-    InitDescriptorSet();
     
+}
+
+void LoadedGLTF::updateDescriptorSet(vk::DescriptorSet descriptorSet)
+{
+
+
+    {
+
+        std::vector<vk::WriteDescriptorSet> writeDescriptorSets(2, {});
+        vk::DescriptorBufferInfo bufferInfo{};
+        bufferInfo.setOffset(0);
+        bufferInfo.setBuffer(materialBuffer.buffer);
+        bufferInfo.setRange(sizeof(DDing::Material) * materials.size());
+
+        writeDescriptorSets[0].dstSet = descriptorSet;
+        writeDescriptorSets[0].dstBinding = 0;
+        writeDescriptorSets[0].dstArrayElement = 0;
+        writeDescriptorSets[0].descriptorType = vk::DescriptorType::eStorageBuffer;
+        writeDescriptorSets[0].descriptorCount = 1;
+        writeDescriptorSets[0].pBufferInfo = &bufferInfo;
+
+        std::vector<vk::DescriptorImageInfo> textureDescriptors(textures.size());
+        for (size_t i = 0; i < textures.size(); i++) {
+            textureDescriptors[i].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            textureDescriptors[i].sampler = textures[i]->sampler;
+            textureDescriptors[i].imageView = textures[i]->image->imageView;
+        }
+
+        writeDescriptorSets[1].dstBinding = 1;
+        writeDescriptorSets[1].dstArrayElement = 0;
+        writeDescriptorSets[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+        writeDescriptorSets[1].descriptorCount = static_cast<uint32_t>(textures.size());
+        writeDescriptorSets[1].dstSet = descriptorSet;
+        writeDescriptorSets[1].pImageInfo = textureDescriptors.data();
+
+        DGame->context.logical.updateDescriptorSets(writeDescriptorSets, nullptr);
+    }
 }
 
 void LoadedGLTF::LoadImages(const tinygltf::Model& model)
@@ -390,68 +426,6 @@ void LoadedGLTF::LoadSamplers(const tinygltf::Model& model)
     }
 }
 
-void LoadedGLTF::InitDescriptorSet()
-{
-    {
-    std::vector<vk::DescriptorPoolSize> poolSizes = {
-        vk::DescriptorPoolSize(vk::DescriptorType::eStorageBuffer,1),
-        vk::DescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler,1024),
-    };
-
-    vk::DescriptorPoolCreateInfo poolInfo{};
-    poolInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet | vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
-    poolInfo.setPoolSizes(poolSizes);
-    poolInfo.setMaxSets(2);
-
-    descriptorPool = DGame->context.logical.createDescriptorPool(poolInfo);
-    }
-    {
-
-    std::vector<uint32_t> variableDescriptorCounts = { 1024 };
-    vk::DescriptorSetVariableDescriptorCountAllocateInfo variableDescriptorCountAllocInfo{};
-    variableDescriptorCountAllocInfo.setDescriptorCounts(variableDescriptorCounts);
-
-    vk::DescriptorSetAllocateInfo allocInfo{};
-    allocInfo.setDescriptorPool(*descriptorPool);
-    allocInfo.setDescriptorSetCount(1);
-    allocInfo.setSetLayouts(*DGame->render.bindLessLayout);
-    allocInfo.setPNext(&variableDescriptorCountAllocInfo);
-
-    descriptorSet = std::move(DGame->context.logical.allocateDescriptorSets(allocInfo).front());
-    }
-   
-    {
-
-        std::vector<vk::WriteDescriptorSet> writeDescriptorSets(2, {});
-        vk::DescriptorBufferInfo bufferInfo{};
-        bufferInfo.setOffset(0);
-        bufferInfo.setBuffer(materialBuffer.buffer);
-        bufferInfo.setRange(sizeof(DDing::Material) * materials.size());
-        
-        writeDescriptorSets[0].dstSet = *descriptorSet;
-        writeDescriptorSets[0].dstBinding = 0;
-        writeDescriptorSets[0].dstArrayElement = 0;
-        writeDescriptorSets[0].descriptorType = vk::DescriptorType::eStorageBuffer;
-        writeDescriptorSets[0].descriptorCount = 1;
-        writeDescriptorSets[0].pBufferInfo = &bufferInfo;
-
-        std::vector<vk::DescriptorImageInfo> textureDescriptors(textures.size());
-        for (size_t i = 0; i < textures.size(); i++) {
-            textureDescriptors[i].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-            textureDescriptors[i].sampler = textures[i]->sampler;
-            textureDescriptors[i].imageView = textures[i]->image->imageView;
-        }
-
-        writeDescriptorSets[1].dstBinding = 1;
-        writeDescriptorSets[1].dstArrayElement = 0;
-        writeDescriptorSets[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-        writeDescriptorSets[1].descriptorCount = static_cast<uint32_t>(textures.size());
-        writeDescriptorSets[1].dstSet = *descriptorSet;
-        writeDescriptorSets[1].pImageInfo = textureDescriptors.data();
-
-        DGame->context.logical.updateDescriptorSets(writeDescriptorSets, nullptr);
-    }
-}
 
 void LoadedGLTF::InitBuffer()
 {

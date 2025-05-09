@@ -146,7 +146,7 @@ void main() {
         vec3 H = normalize(V + L);
         float distance = length(lightPosition - inWorldPos);
         float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = ubo.lights[i].color * attenuation;
+        vec3 radiance = ubo.lights[i].color * ubo.lights[i].intensity * attenuation;
 
         float NDF = DistributionGGX(N, H, roughness);   
         float G   = GeometrySmith(N, V, L, roughness);      

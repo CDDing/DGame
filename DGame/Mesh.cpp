@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Mesh.h"
+#include "ForwardPass.h"
 DDing::Primitive::Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> indices)
 	:vertices(vertices), indices(indices)
 {
@@ -77,7 +78,7 @@ DDing::Primitive::Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> 
 
 void DDing::Primitive::Draw(vk::CommandBuffer commandBuffer, const glm::mat4& transform, const vk::PipelineLayout pipelineLayout)
 {
-	ForwardPass::PushConstant pushConstant{
+	DDing::ForwardPass::PushConstant pushConstant{
 		transform,
 		vertexBufferAddress, // primitive 고유 주소
 		materialIndex

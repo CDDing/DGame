@@ -30,7 +30,7 @@ namespace DDing {
 			return nullptr;
 		}
 
-		void Draw(vk::CommandBuffer commandBuffer);
+		void Draw(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout);
 		auto& GetComponents() { return components; }
 		
 		bool isActive = true;

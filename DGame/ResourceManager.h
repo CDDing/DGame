@@ -18,6 +18,7 @@ struct LoadedGLTF {
 	vk::raii::DescriptorSet descriptorSet = nullptr;
 	DDing::Buffer materialBuffer;
 	LoadedGLTF(const std::string path);
+	void updateDescriptorSet(vk::DescriptorSet descriptorSet);
 private:
 
 	void LoadImages(const tinygltf::Model& model);
@@ -26,7 +27,6 @@ private:
 	void LoadTextures(const tinygltf::Model& model);
 	void LoadMaterials(const tinygltf::Model& model);
 	void LoadSamplers(const tinygltf::Model& model);
-	void InitDescriptorSet();
 	void InitBuffer();
 
 };

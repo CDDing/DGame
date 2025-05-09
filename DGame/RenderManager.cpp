@@ -3,16 +3,18 @@
 #include "Pipeline.h"
 #include "SwapChain.h"
 #include "RenderPass.h"
+#include "ForwardPass.h"
+#include "DeferredPass.h"
+#include "ShadowPass.h"
 #include "Context.h"
 void RenderManager::Init()
 {
     initFrameDatas();
-    initRenderPasses();
-    initPipelines();
     initPasses();
 }
-void RenderManager::DrawFrame(DDing::Scene* scene, DDing::PassType passType)
+void RenderManager::DrawFrame(DDing::Scene* scene)
 {
+    
     FrameData& frameData = frameDatas[currentFrame];
 
     auto resultForFence = DGame->context.logical.waitForFences({ *frameData.waitFrame }, vk::True, UINT64_MAX);
@@ -26,20 +28,29 @@ void RenderManager::DrawFrame(DDing::Scene* scene, DDing::PassType passType)
     frameData.commandBuffer.reset({});
     vk::CommandBufferBeginInfo beginInfo{};
     frameData.commandBuffer.begin(beginInfo);
-    copyGlobalBuffer(*frameData.commandBuffer);
-    
-    auto passIt = passes.find(passType);
-    if (passIt == passes.end())
-        throw std::runtime_error("RenderPass type not found");
 
-    passes[passType]->Render(frameData.commandBuffer, scene);
-    
-    //First copy to Swapchain, and draw gui on swapChain
-    copyResultToSwapChain(*frameData.commandBuffer, imageIndex);
-    DGame->input.DrawImGui(*frameData.commandBuffer, imageIndex);
-    
-    frameData.commandBuffer.end();
-    
+    //Shadow
+    {
+        
+    }
+
+    //Forward
+    {
+
+        
+        passes[DDing::PassType::eForward]->Render(frameData.commandBuffer);
+
+        //First copy to Swapchain, and draw gui on swapChain
+        copyResultToSwapChain(*frameData.commandBuffer, imageIndex);
+        DGame->input.DrawImGui(*frameData.commandBuffer, imageIndex);
+
+        frameData.commandBuffer.end();
+
+    }
+    //PostProcessing
+    {
+
+    }
     submitCommandBuffer(*frameData.commandBuffer);
     presentCommandBuffer(*frameData.commandBuffer, imageIndex);
 
@@ -53,287 +64,22 @@ void RenderManager::DrawUI()
         pass->DrawUI();
     }
 }
-void RenderManager::initRenderPasses()
-{
-    //Default
-	{
-        vk::AttachmentDescription colorAttachment{};
-        colorAttachment.format = DDing::ForwardPass::ColorFormat;
-        colorAttachment.samples = vk::SampleCountFlagBits::e1;
-        colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-        colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-        colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-        colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-        colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
-        colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-
-        vk::AttachmentDescription depthGUIAttachment{};
-        depthGUIAttachment.format = DDing::ForwardPass::ColorFormat;
-        depthGUIAttachment.samples = vk::SampleCountFlagBits::e1;
-        depthGUIAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-        depthGUIAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-        depthGUIAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-        depthGUIAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-        depthGUIAttachment.initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        depthGUIAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-
-        vk::AttachmentDescription depthAttachment{};
-        depthAttachment.format = DDing::ForwardPass::DepthFormat;
-        depthAttachment.samples = vk::SampleCountFlagBits::e1;
-        depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-        depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
-        depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-        depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-        depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
-        depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-        vk::AttachmentReference colorAttachmentRef{};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-        vk::AttachmentReference depthGUIAttachmentRef{};
-        depthGUIAttachmentRef.attachment = 1;
-        depthGUIAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-        vk::AttachmentReference depthAttachmentRef{};
-        depthAttachmentRef.attachment = 2;
-        depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-        std::vector<vk::AttachmentReference> colorAttachments{ colorAttachmentRef, depthGUIAttachmentRef };
-
-        vk::SubpassDescription subpass{};
-        subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-        subpass.setColorAttachments(colorAttachments);
-        subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-        vk::SubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
-        dependency.srcAccessMask = {};
-        dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
-        dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-
-        std::vector<vk::AttachmentDescription> attachments = { colorAttachment, depthGUIAttachment, depthAttachment };
-        vk::RenderPassCreateInfo renderPassInfo{};
-        renderPassInfo.setAttachments(attachments);
-        renderPassInfo.setSubpasses(subpass);
-        renderPassInfo.setDependencies(dependency);
-		vk::raii::RenderPass renderPass = DGame->context.logical.createRenderPass(renderPassInfo);
-
-        renderPasses.insert({ DDing::RenderPassType::Default,std::move(renderPass) });
-	}
-    //Deferred
-	{
-
-	}
-}
-
-void RenderManager::initPipelines()
-{
-    {
-        PipelineDesc pipelineDesc{};
-        
-        auto vertShaderCode = loadShader("Shaders/shader.vert.spv");
-        vk::ShaderModuleCreateInfo vertCreateInfo{};
-        vertCreateInfo.setCode(vertShaderCode);
-        vk::raii::ShaderModule vertShaderModule = DGame->context.logical.createShaderModule(vertCreateInfo);
-        vk::PipelineShaderStageCreateInfo vertStage{};
-        vertStage.setModule(*vertShaderModule);
-        vertStage.setPName("main");
-        vertStage.setStage(vk::ShaderStageFlagBits::eVertex);
-
-        auto fragShaderCode = loadShader("Shaders/shader.frag.spv");
-        vk::ShaderModuleCreateInfo fragCreateInfo{};
-        fragCreateInfo.setCode(fragShaderCode);
-        vk::raii::ShaderModule fragShaderModule = DGame->context.logical.createShaderModule(fragCreateInfo);
-        vk::PipelineShaderStageCreateInfo fragStage{};
-        fragStage.setModule(*fragShaderModule);
-        fragStage.setPName("main");
-        fragStage.setStage(vk::ShaderStageFlagBits::eFragment);
-       
-
-        std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertStage,fragStage};
-        pipelineDesc.shaderStages = shaderStages;
-
-
-        std::vector<vk::DynamicState> dynamicStates;
-        vk::PipelineDynamicStateCreateInfo dynamicState{};
-        dynamicState.setDynamicStates(dynamicStates);
-        pipelineDesc.dynamicState = dynamicState;
-
-        //TODO
-        vk::PipelineVertexInputStateCreateInfo vertexInputInfo{};
-        vertexInputInfo.setVertexAttributeDescriptions({});
-        vertexInputInfo.setVertexBindingDescriptions({});
-        pipelineDesc.vertexInput = vertexInputInfo;
-
-        vk::PipelineInputAssemblyStateCreateInfo inputAssembly{};
-        inputAssembly.setPrimitiveRestartEnable(vk::False);
-        inputAssembly.setTopology(vk::PrimitiveTopology::eTriangleList);
-        pipelineDesc.inputAssembly = inputAssembly;
-
-        vk::Viewport viewport{};
-        viewport.setWidth(DGame->swapChain.extent.width);
-        viewport.setHeight(DGame->swapChain.extent.height);
-        viewport.setX(0.0f);
-        viewport.setY(0.0f);
-        viewport.setMinDepth(0.0f);
-        viewport.setMaxDepth(1.0f);
-
-        vk::Rect2D scissor{};
-        scissor.setExtent(DGame->swapChain.extent);
-
-        vk::PipelineViewportStateCreateInfo viewportState{};
-        viewportState.setScissors(scissor);
-        viewportState.setViewports(viewport);
-        pipelineDesc.viewportState = viewportState;
-        
-        vk::PipelineRasterizationStateCreateInfo rasterizer{};
-        rasterizer.setCullMode(vk::CullModeFlagBits::eFront);
-        rasterizer.setFrontFace(vk::FrontFace::eCounterClockwise);
-        rasterizer.setPolygonMode(vk::PolygonMode::eFill);
-        rasterizer.setDepthClampEnable(vk::False);
-        rasterizer.setRasterizerDiscardEnable(vk::False);
-        rasterizer.setLineWidth(1.0f);
-        rasterizer.setDepthBiasEnable(vk::False);
-        rasterizer.setDepthBiasConstantFactor(0.0f);
-        rasterizer.setDepthBiasClamp(0.0f);
-        rasterizer.setDepthBiasSlopeFactor(0.0f);
-        pipelineDesc.rasterizer = rasterizer;
-
-        vk::PipelineMultisampleStateCreateInfo multiSampling{};
-        multiSampling.setRasterizationSamples(vk::SampleCountFlagBits::e1);
-        multiSampling.setSampleShadingEnable(vk::False);
-        multiSampling.setMinSampleShading(1.0f);
-        multiSampling.setAlphaToCoverageEnable(vk::False);
-        multiSampling.setAlphaToOneEnable(vk::False);
-        pipelineDesc.multiSample = multiSampling;
-
-        vk::PipelineColorBlendAttachmentState colorBlendAttachment{};
-        colorBlendAttachment.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-        colorBlendAttachment.setBlendEnable(vk::False);
-        colorBlendAttachment.setSrcColorBlendFactor(vk::BlendFactor::eOne);
-        colorBlendAttachment.setDstColorBlendFactor(vk::BlendFactor::eZero);
-        colorBlendAttachment.setColorBlendOp(vk::BlendOp::eAdd);
-        colorBlendAttachment.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
-        colorBlendAttachment.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
-        colorBlendAttachment.setAlphaBlendOp(vk::BlendOp::eAdd);
-
-        vk::PipelineColorBlendAttachmentState GUIBlendAttachment{};
-        GUIBlendAttachment.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-        GUIBlendAttachment.setBlendEnable(vk::False);
-        GUIBlendAttachment.setSrcColorBlendFactor(vk::BlendFactor::eOne);
-        GUIBlendAttachment.setDstColorBlendFactor(vk::BlendFactor::eZero);
-        GUIBlendAttachment.setColorBlendOp(vk::BlendOp::eAdd);
-        GUIBlendAttachment.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
-        GUIBlendAttachment.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
-        GUIBlendAttachment.setAlphaBlendOp(vk::BlendOp::eAdd);
-        
-        std::vector<vk::PipelineColorBlendAttachmentState> attachments{ colorBlendAttachment,GUIBlendAttachment };
-
-        vk::PipelineColorBlendStateCreateInfo colorBlending{};
-        colorBlending.setLogicOpEnable(vk::False);
-        colorBlending.setLogicOp(vk::LogicOp::eCopy);
-        colorBlending.setAttachments(attachments);
-        colorBlending.setBlendConstants({ 0 });
-        pipelineDesc.colorBlend = colorBlending;
-
-        vk::PipelineDepthStencilStateCreateInfo depthStencil{};
-        depthStencil.setDepthTestEnable(vk::True);
-        depthStencil.setDepthWriteEnable(vk::True);
-        depthStencil.setDepthCompareOp(vk::CompareOp::eLess);
-        depthStencil.setDepthBoundsTestEnable(vk::False);
-        depthStencil.setMinDepthBounds(0.0f);
-        depthStencil.setMaxDepthBounds(1.0f);
-        depthStencil.setStencilTestEnable(vk::False);
-        depthStencil.setFront(vk::StencilOpState{});
-        depthStencil.setBack(vk::StencilOpState{});
-        pipelineDesc.depthStencil = depthStencil;
-
-        //TODO
-        std::vector<vk::DescriptorSetLayout> setLayouts = { *globalSetLayout,*bindLessLayout };
-        vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.setSetLayouts(setLayouts);
-        vk::PushConstantRange pushConstantRange{};
-        pushConstantRange.setOffset(0);
-        pushConstantRange.setSize(sizeof(DDing::ForwardPass::PushConstant));
-        pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-        pipelineLayoutInfo.setPushConstantRanges({pushConstantRange});
-        pipelineDesc.layout = pipelineLayoutInfo;
-
-        //TODO
-        pipelineDesc.renderPass = *renderPasses.at(DDing::RenderPassType::Default);
-
-
-        auto pipeline = std::make_unique<DDing::GraphicsPipeline>(DGame->context,pipelineDesc);
-        pipelines.insert({ DDing::PipelineType::Default,std::move(pipeline)});
-    }
-}
 
 void RenderManager::initPasses()
 {
     //ForwardPass
     {
-        auto forwardPass = std::make_unique<DDing::ForwardPass>(*pipelines.at(DDing::PipelineType::Default), *renderPasses.at(DDing::RenderPassType::Default));
+        auto forwardPass = std::make_unique<DDing::ForwardPass>();
 
-        //TODO currentPipeline change
-        currentPipeline = pipelines.at(DDing::PipelineType::Default).get();
-        currentRenderPass = *renderPasses.at(DDing::RenderPassType::Default);
-
-        passes.insert({ DDing::PassType::Default,std::move(forwardPass) });
+        passes.insert({ DDing::PassType::eForward,std::move(forwardPass) });
 
     }
-}
+    //ShadowPass
+    {
+        auto shadowPass = std::make_unique<DDing::ShadowPass>();
 
-void RenderManager::initGlobalDescriptorSetLayout()
-{
-    vk::DescriptorSetLayoutBinding layoutBinding{};
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
-    layoutBinding.descriptorCount = 1;
-    layoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
-
-    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.setBindings(layoutBinding);
-    globalSetLayout = DGame->context.logical.createDescriptorSetLayout(layoutInfo);
-}
-
-void RenderManager::initBindLessDescriptorSetLayout()
-{
-    vk::DescriptorSetLayoutBinding materialBufferBinding{};
-    materialBufferBinding.binding = 0;
-    materialBufferBinding.descriptorType = vk::DescriptorType::eStorageBuffer;
-    materialBufferBinding.descriptorCount = 1;
-    materialBufferBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
-
-    vk::DescriptorSetLayoutBinding textureArrayBinding{};
-    textureArrayBinding.binding = 1;
-    textureArrayBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-    textureArrayBinding.descriptorCount = 1024; //TODO Change
-    textureArrayBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
-    textureArrayBinding.pImmutableSamplers = nullptr;
-
-    
-    vk::DescriptorSetLayoutBindingFlagsCreateInfo bindingFlagCreateInfo{};
-
-    std::vector<vk::DescriptorBindingFlags> bindingFlags{
-        {},
-        vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind,
-    };
-    bindingFlagCreateInfo.setBindingFlags(bindingFlags);
-
-    std::vector<vk::DescriptorSetLayoutBinding> bindings{
-        materialBufferBinding,textureArrayBinding,
-    };
-    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.bindingCount = 2;
-    layoutInfo.setBindings(bindings);
-    layoutInfo.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT;
-    layoutInfo.pNext = &bindingFlagCreateInfo;
-
-    bindLessLayout = DGame->context.logical.createDescriptorSetLayout(layoutInfo);
-
+        passes.insert({ DDing::PassType::eShadow,std::move(shadowPass) });
+    }
 }
 
 void RenderManager::initFrameDatas()
@@ -364,73 +110,6 @@ void RenderManager::initFrameDatas()
             allocInfo.setCommandPool(*frameData.commandPool);
 
             frameData.commandBuffer = std::move(DGame->context.logical.allocateCommandBuffers(allocInfo).front());
-        }
-        //Descriptor Sets, buffers For Global Variables
-        {
-            initGlobalDescriptorSetLayout();
-            {
-                vk::DescriptorPoolSize poolSize{};
-                poolSize.setType(vk::DescriptorType::eUniformBuffer);
-                poolSize.setDescriptorCount(FRAME_CNT);
-
-                vk::DescriptorPoolCreateInfo poolInfo{};
-                poolInfo.setMaxSets(FRAME_CNT);
-                poolInfo.setPoolSizes(poolSize);
-                poolInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
-
-                frameData.descriptorPool = DGame->context.logical.createDescriptorPool(poolInfo);
-            }
-            {
-                vk::DescriptorSetAllocateInfo allocInfo{};
-                allocInfo.setDescriptorPool(*frameData.descriptorPool);
-                allocInfo.setDescriptorSetCount(FRAME_CNT);
-                allocInfo.setSetLayouts(*globalSetLayout);
-
-                frameData.descriptorSet = std::move(DGame->context.logical.allocateDescriptorSets(allocInfo).front());
-            }
-            {
-                vk::BufferCreateInfo bufferInfo{};
-                bufferInfo.setSize(sizeof(GlobalBuffer));
-                bufferInfo.setUsage(vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst);
-
-                VmaAllocationCreateInfo allocInfo{};
-                allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-                allocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-                allocInfo.priority = 1.0f;
-
-                frameData.globalUniformBuffer = DDing::Buffer(bufferInfo, allocInfo);
-            }
-            {
-                vk::BufferCreateInfo stagingInfo{ };
-                stagingInfo.setSize(sizeof(GlobalBuffer));
-                stagingInfo.setUsage(vk::BufferUsageFlagBits::eTransferSrc);
-
-                VmaAllocationCreateInfo allocInfo{};
-                allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-                allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-                frameData.globalStagingBuffer = DDing::Buffer(stagingInfo, allocInfo);
-            }
-            {
-                vk::DescriptorBufferInfo bufferInfo{};
-                bufferInfo.buffer = frameData.globalUniformBuffer.buffer;
-                bufferInfo.range = sizeof(GlobalBuffer);
-                bufferInfo.offset = 0;
-
-                vk::WriteDescriptorSet descriptorWrite{};
-                descriptorWrite.dstSet = frameData.descriptorSet;
-                descriptorWrite.dstBinding = 0;
-                descriptorWrite.dstArrayElement = 0;
-                descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
-                descriptorWrite.descriptorCount = 1;
-                descriptorWrite.pBufferInfo = &bufferInfo;
-
-                DGame->context.logical.updateDescriptorSets(descriptorWrite, nullptr);
-            }
-        }
-        //Bindless
-        {
-            initBindLessDescriptorSetLayout();
         }
         frameDatas.push_back(std::move(frameData));
     }
@@ -468,7 +147,7 @@ void RenderManager::copyResultToSwapChain(vk::CommandBuffer commandBuffer, uint3
     DDing::Image::setImageLayout(commandBuffer, DGame->swapChain.images[imageIndex], vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferDstOptimal);
     
     //TODO current Pass change not default
-    auto& renderedImage = passes.at(DDing::PassType::Default)->GetOutputImage();
+    auto& renderedImage = passes.at(DDing::PassType::eForward)->GetOutputImage();
     renderedImage.setImageLayout(commandBuffer, vk::ImageLayout::eTransferSrcOptimal);
     
     
@@ -494,15 +173,4 @@ void RenderManager::copyResultToSwapChain(vk::CommandBuffer commandBuffer, uint3
     renderedImage.setImageLayout(commandBuffer, vk::ImageLayout::eColorAttachmentOptimal);
 
 
-}
-
-void RenderManager::copyGlobalBuffer(vk::CommandBuffer commandBuffer)
-{
-    FrameData& frameData = frameDatas[currentFrame];
-    VkBufferCopy copyRegion{};
-    copyRegion.dstOffset = 0;
-    copyRegion.dstOffset = 0;
-    copyRegion.size = sizeof(GlobalBuffer);
-
-    vkCmdCopyBuffer(commandBuffer, frameData.globalStagingBuffer.buffer, frameData.globalUniformBuffer.buffer, 1, &copyRegion);
 }

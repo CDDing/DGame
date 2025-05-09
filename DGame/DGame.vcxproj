@@ -157,10 +157,12 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Context.cpp" />
+    <ClCompile Include="DeferredPass.cpp" />
     <ClCompile Include="DGame.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="ForwardPass.cpp" />
     <ClCompile Include="Game.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
@@ -181,6 +183,7 @@
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="ShadowPass.cpp" />
     <ClCompile Include="Structs.cpp" />
     <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="TimeManager.cpp" />
@@ -190,6 +193,8 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Context.h" />
+    <ClInclude Include="DeferredPass.h" />
+    <ClInclude Include="ForwardPass.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="InputManager.h" />
@@ -204,6 +209,7 @@
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="ShadowPass.h" />
     <ClInclude Include="Structs.h" />
     <ClInclude Include="SwapChain.h" />
     <ClInclude Include="TimeManager.h" />
@@ -211,6 +217,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
+    <None Include="Shaders\DepthOnly.frag" />
+    <None Include="Shaders\DepthOnly.vert" />
     <None Include="Shaders\shader.frag" />
     <None Include="Shaders\shader.vert" />
   </ItemGroup>
