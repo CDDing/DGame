@@ -78,13 +78,13 @@ DDing::Primitive::Primitive(std::vector<Vertex> vertices, std::vector<uint32_t> 
 
 void DDing::Primitive::Draw(vk::CommandBuffer commandBuffer, const glm::mat4& transform, const vk::PipelineLayout pipelineLayout)
 {
-	DDing::ForwardPass::PushConstant pushConstant{
+	DrawPushConstant pushConstant{
 		transform,
 		vertexBufferAddress, // primitive 고유 주소
 		materialIndex
 	};
 
-	commandBuffer.pushConstants<ForwardPass::PushConstant>(
+	commandBuffer.pushConstants<DrawPushConstant>(
 		pipelineLayout,
 		vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
 		0,

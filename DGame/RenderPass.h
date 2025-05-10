@@ -9,6 +9,7 @@ namespace DDing {
 		virtual void InitRenderPass() = 0;
 		virtual void InitPipeline() = 0;
 		virtual void InitFrameData() = 0;
+		virtual void InitDescriptors() = 0;
 		virtual void Render(vk::CommandBuffer commandBuffer) = 0;
 		virtual void DrawUI() {};
 		

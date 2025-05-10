@@ -9,14 +9,8 @@ namespace DDing {
 
 			DDing::Buffer uniformBuffer;
 			DDing::Buffer stagingBuffer;
-			GlobalBuffer buffer;
 		};
 	public:
-		struct PushConstant {
-			glm::mat4 transformMatrix;
-			vk::DeviceAddress deviceAddress;
-			int materialIndex;
-		};
 		static vk::Format DepthFormat;
 		static vk::Format ColorFormat;
 		ForwardPass();
@@ -24,13 +18,13 @@ namespace DDing {
 		void InitRenderPass() override;
 		void InitPipeline() override;
 		void InitFrameData() override;
+		void InitDescriptors() override;
 		void Render(vk::CommandBuffer commandBuffer) override;
 		void DrawUI() override;
 	protected:
 		void SetBuffer(vk::CommandBuffer commandBuffer);
 		void createDepthImage();
 		void createFramebuffers();
-		void InitBindless();
 
 		void initDepthImageGUI();
 
@@ -47,7 +41,6 @@ namespace DDing {
 		DDing::Image depthImage;
 
 		//Depth Image For GUI
-		vk::raii::Sampler depthImageSampler = nullptr;
 		std::vector<VkDescriptorSet> depthImageDescriptorSet;
 		std::vector<DDing::Image> depthImageGUI;
 

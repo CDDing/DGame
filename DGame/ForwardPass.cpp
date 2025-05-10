@@ -8,7 +8,7 @@ vk::Format DDing::ForwardPass::DepthFormat = vk::Format::eD32Sfloat;
 vk::Format DDing::ForwardPass::ColorFormat = vk::Format::eB8G8R8A8Unorm;
 DDing::ForwardPass::ForwardPass()
 {
-	InitBindless();
+	InitDescriptors();
 	InitFrameData();
 	InitRenderPass();
 	InitPipeline();
@@ -226,7 +226,7 @@ void DDing::ForwardPass::InitPipeline()
 	pipelineLayoutInfo.setSetLayouts(setLayouts);
 	vk::PushConstantRange pushConstantRange{};
 	pushConstantRange.setOffset(0);
-	pushConstantRange.setSize(sizeof(DDing::ForwardPass::PushConstant));
+	pushConstantRange.setSize(sizeof(DrawPushConstant));
 	pushConstantRange.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
 	pipelineLayoutInfo.setPushConstantRanges({ pushConstantRange });
 	pipelineDesc.layout = pipelineLayoutInfo;
@@ -241,17 +241,6 @@ void DDing::ForwardPass::InitPipeline()
 
 void DDing::ForwardPass::InitFrameData()
 {
-	{
-		vk::DescriptorSetLayoutBinding layoutBinding{};
-		layoutBinding.binding = 0;
-		layoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
-		layoutBinding.descriptorCount = 1;
-		layoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
-
-		vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-		layoutInfo.setBindings(layoutBinding);
-		sceneSetLayout = DGame->context.logical.createDescriptorSetLayout(layoutInfo);
-	}
 
 	for (int i = 0; i < FRAME_CNT; i++) {
 		ForwardFrameData frameData{};
@@ -273,7 +262,7 @@ void DDing::ForwardPass::InitFrameData()
 		{
 			vk::DescriptorSetAllocateInfo allocInfo{};
 			allocInfo.setDescriptorPool(*frameData.descriptorPool);
-			allocInfo.setDescriptorSetCount(FRAME_CNT);
+			allocInfo.setDescriptorSetCount(1);
 			allocInfo.setSetLayouts(*sceneSetLayout);
 
 			frameData.descriptorSet = std::move(DGame->context.logical.allocateDescriptorSets(allocInfo).front());
@@ -320,6 +309,7 @@ void DDing::ForwardPass::InitFrameData()
 		frameDatas.push_back(std::move(frameData));
 	}
 }
+
 
 void DDing::ForwardPass::Render(vk::CommandBuffer commandBuffer)
 {
@@ -436,7 +426,7 @@ void DDing::ForwardPass::createDepthImage()
 	imageInfo.setMipLevels(1);
 	imageInfo.setSamples(vk::SampleCountFlagBits::e1);
 	imageInfo.setTiling(vk::ImageTiling::eOptimal);
-	imageInfo.setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled);
+	imageInfo.setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment);
 	imageInfo.setInitialLayout(vk::ImageLayout::eUndefined);
 	imageInfo.setSharingMode(vk::SharingMode::eExclusive);
 
@@ -472,9 +462,20 @@ void DDing::ForwardPass::createFramebuffers()
 	}
 }
 
-void DDing::ForwardPass::InitBindless()
+void DDing::ForwardPass::InitDescriptors()
 {
 
+	{
+		vk::DescriptorSetLayoutBinding layoutBinding{};
+		layoutBinding.binding = 0;
+		layoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+		layoutBinding.descriptorCount = 1;
+		layoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
+
+		vk::DescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.setBindings(layoutBinding);
+		sceneSetLayout = DGame->context.logical.createDescriptorSetLayout(layoutInfo);
+	}
 	{
 		vk::DescriptorSetLayoutBinding materialBufferBinding{};
 		materialBufferBinding.binding = 0;
@@ -545,17 +546,6 @@ void DDing::ForwardPass::InitBindless()
 void DDing::ForwardPass::initDepthImageGUI()
 {
 
-	vk::SamplerCreateInfo samplerInfo{};
-	samplerInfo.setMagFilter(vk::Filter::eLinear);
-	samplerInfo.setMinFilter(vk::Filter::eLinear);
-	samplerInfo.setMipmapMode(vk::SamplerMipmapMode::eLinear);
-	samplerInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat);
-	samplerInfo.setAddressModeV(vk::SamplerAddressMode::eRepeat);
-	samplerInfo.setAddressModeW(vk::SamplerAddressMode::eRepeat);
-	samplerInfo.setMinLod(-1000);
-	samplerInfo.setMaxLod(1000);
-	samplerInfo.setMaxAnisotropy(1.0f);
-	depthImageSampler = vk::raii::Sampler(DGame->context.logical, samplerInfo);
 
 
 	for (int i = 0; i < FRAME_CNT; i++) {
@@ -588,7 +578,7 @@ void DDing::ForwardPass::initDepthImageGUI()
 			});
 
 
-		depthImageDescriptorSet.push_back(ImGui_ImplVulkan_AddTexture(*depthImageSampler, depthImageGUI[i].imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+		depthImageDescriptorSet.push_back(ImGui_ImplVulkan_AddTexture(*DGame->render.GUISampler, depthImageGUI[i].imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
 
 	}
 

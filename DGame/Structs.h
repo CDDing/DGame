@@ -7,6 +7,11 @@ struct QueueFamilyIndices {
         return graphicsFamily.has_value() && presentFamily.has_value();
     }
 };
+struct DrawPushConstant {
+    glm::mat4 transformMatrix;
+    vk::DeviceAddress deviceAddress;
+    int materialIndex;
+};
 
 struct SwapChainSupportDetails {
     vk::SurfaceCapabilitiesKHR capabilities;

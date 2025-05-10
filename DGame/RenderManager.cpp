@@ -9,6 +9,7 @@
 #include "Context.h"
 void RenderManager::Init()
 {
+    InitGUISampler();
     initFrameDatas();
     initPasses();
 }
@@ -31,7 +32,9 @@ void RenderManager::DrawFrame(DDing::Scene* scene)
 
     //Shadow
     {
-        
+
+
+        passes[DDing::PassType::eShadow]->Render(frameData.commandBuffer);
     }
 
     //Forward
@@ -63,6 +66,21 @@ void RenderManager::DrawUI()
         auto& pass = element.second;
         pass->DrawUI();
     }
+}
+
+void RenderManager::InitGUISampler()
+{
+    vk::SamplerCreateInfo samplerInfo{};
+    samplerInfo.setMagFilter(vk::Filter::eLinear);
+    samplerInfo.setMinFilter(vk::Filter::eLinear);
+    samplerInfo.setMipmapMode(vk::SamplerMipmapMode::eLinear);
+    samplerInfo.setAddressModeU(vk::SamplerAddressMode::eRepeat);
+    samplerInfo.setAddressModeV(vk::SamplerAddressMode::eRepeat);
+    samplerInfo.setAddressModeW(vk::SamplerAddressMode::eRepeat);
+    samplerInfo.setMinLod(-1000);
+    samplerInfo.setMaxLod(1000);
+    samplerInfo.setMaxAnisotropy(1.0f);
+    GUISampler = vk::raii::Sampler(DGame->context.logical, samplerInfo);
 }
 
 void RenderManager::initPasses()

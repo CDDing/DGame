@@ -32,12 +32,11 @@ public:
 	void DrawUI();
 
 	uint32_t currentFrame = 0;
-	//TODO
-	DDing::Pipeline* currentPipeline;
-	vk::RenderPass currentRenderPass;
+	vk::raii::Sampler GUISampler = nullptr;
 
 	std::vector<FrameData> frameDatas = {};
 private:
+	void InitGUISampler();
 	void initPasses();
 	void initFrameDatas();
 

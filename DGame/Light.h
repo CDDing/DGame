@@ -8,7 +8,8 @@ namespace DDing {
 	class Light : public Component
 	{
 	public:
-		LightType type;
+		//TODO to Directional
+		LightType type = LightType::ePoint;
 
 		glm::vec3 color = glm::vec3(1.0f);
 
