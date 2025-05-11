@@ -3,7 +3,7 @@
 #include "Light.h"
 #include "Transform.h"
 vk::Format DDing::ShadowPass::DepthFormat = vk::Format::eD32Sfloat;
-vk::Format DDing::ShadowPass::SampleFormat = vk::Format::eR8G8B8A8Unorm;
+vk::Format DDing::ShadowPass::SampleFormat = vk::Format::eB8G8R8A8Unorm;
 
 DDing::ShadowPass::ShadowPass()
 {
@@ -339,7 +339,7 @@ void DDing::ShadowPass::Render(vk::CommandBuffer commandBuffer)
 
 				for (int faceIndex = 0; faceIndex < 6; faceIndex++) {
 
-					auto idx = GetPointLightIndex(currentFrame, pCnt, faceIndex);
+					auto idx = currentFrame* MAX_LIGHTS * 6 + pCnt * 6 + faceIndex;
 
 					vk::ClearValue clearValues[2];
 					clearValues[0].color = vk::ClearColorValue{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -525,7 +525,8 @@ void DDing::ShadowPass::SetBuffer(vk::CommandBuffer commandBuffer)
 			case LightType::ePoint:
 				point.lightPosition = transform->GetWorldPosition();
 				point.projection = glm::perspectiveFovLH(glm::radians(90.0f), static_cast<float>(DGame->swapChain.extent.width), static_cast<float>(DGame->swapChain.extent.height), 0.01f, 100.0f);
-				
+
+				point.projection[1][1] *= -1;
 				
 				auto viewMatrixPositiveX = glm::lookAtLH(transform->GetWorldPosition(), transform->GetWorldPosition() + glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
 				point.view = viewMatrixPositiveX;
@@ -603,9 +604,11 @@ void DDing::ShadowPass::createDepthImage()
 
 void DDing::ShadowPass::createPointLightShadowMapViews()
 {
+	
 	for (int frameCnt = 0; frameCnt < FRAME_CNT; frameCnt++) {
+		auto& frameData = frameDatas[frameCnt];
 		for (int i = 0; i < MAX_LIGHTS; i++) {
-
+			std::vector<vk::raii::ImageView> imageViews;
 
 			for (int j = 0; j < 6; j++) {
 				vk::ImageViewCreateInfo imageViewInfo{};
@@ -615,8 +618,9 @@ void DDing::ShadowPass::createPointLightShadowMapViews()
 				//3 means light types cnt
 				imageViewInfo.setImage(outputImages[frameCnt * MAX_LIGHTS * 3 + MAX_LIGHTS + i ].image);
 
-				pointLightShadowMapViews.push_back(vk::raii::ImageView(DGame->context.logical, imageViewInfo));
+				imageViews.push_back(vk::raii::ImageView(DGame->context.logical, imageViewInfo));
 			}
+			frameData.pointLightShadowMapViews.push_back(std::move(imageViews));
 		}
 	}
 
@@ -625,13 +629,13 @@ void DDing::ShadowPass::createPointLightShadowMapViews()
 void DDing::ShadowPass::createFramebuffers()
 {
 	for (int frameCnt = 0; frameCnt < FRAME_CNT; frameCnt++) {
+		auto& frameData = frameDatas[frameCnt];
 		for (int i = 0; i < MAX_LIGHTS; i++) {
 			//Point Light
 			{
 				for (int j = 0; j < 6; j++) {
-					auto idx = GetPointLightIndex(frameCnt, i, j);
 					std::array<vk::ImageView, 2> attachments = {
-						*pointLightShadowMapViews[idx],
+						*frameData.pointLightShadowMapViews[i][j],
 						depthImage.imageView,
 					};
 					vk::FramebufferCreateInfo framebufferInfo{};
@@ -687,9 +691,4 @@ void DDing::ShadowPass::createFramebuffers()
 			}
 		}
 	}
-}
-
-uint32_t DDing::ShadowPass::GetPointLightIndex(int frameCnt, int lightCnt, int faceIndex)
-{
-	return frameCnt * MAX_LIGHTS * 6 + lightCnt * 6 + faceIndex;
 }

@@ -165,7 +165,7 @@ void RenderManager::copyResultToSwapChain(vk::CommandBuffer commandBuffer, uint3
     DDing::Image::setImageLayout(commandBuffer, DGame->swapChain.images[imageIndex], vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferDstOptimal);
     
     //TODO current Pass change not default
-    auto& renderedImage = passes.at(DDing::PassType::eForward)->GetOutputImage();
+    auto& renderedImage = passes.at(DDing::PassType::eForward)->outputImages[currentFrame];
     renderedImage.setImageLayout(commandBuffer, vk::ImageLayout::eTransferSrcOptimal);
     
     

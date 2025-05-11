@@ -35,8 +35,3 @@ void DDing::RenderPass::createOutputImages()
 }
 
 
-
-DDing::Image& DDing::RenderPass::GetOutputImage()
-{
-	return outputImages[DGame->render.currentFrame];
-}

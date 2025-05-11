@@ -39,6 +39,5 @@ void main() {
     Vertex v = vb.vertices[gl_VertexIndex];
 
     gl_Position = ubo.projection * ubo.view * pushConst.modelMatrix * vec4(v.position,1.0);
-    
     outWorldPos = (pushConst.modelMatrix * vec4(v.position,1.0)).xyz;
 }

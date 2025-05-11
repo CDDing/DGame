@@ -12,14 +12,13 @@ namespace DDing {
 		virtual void InitDescriptors() = 0;
 		virtual void Render(vk::CommandBuffer commandBuffer) = 0;
 		virtual void DrawUI() {};
-		
-		DDing::Image& GetOutputImage();
+
+		std::vector<DDing::Image> outputImages;
 
 	protected:
 		std::unique_ptr<Pipeline> pipeline = nullptr;
 		vk::raii::RenderPass renderPass = nullptr;
 		virtual void createOutputImages();
-		std::vector<DDing::Image> outputImages;
 	};
 	
 }

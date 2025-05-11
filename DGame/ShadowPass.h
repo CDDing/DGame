@@ -21,6 +21,8 @@ namespace DDing
 
 			DDing::Buffer uniformBuffer;
 			DDing::Buffer stagingBuffer;
+
+			std::vector<std::vector<vk::raii::ImageView>> pointLightShadowMapViews;
 		};
 
 
@@ -50,14 +52,12 @@ namespace DDing
 
 		vk::raii::DescriptorSetLayout sceneSetLayout = nullptr;
 
-		std::vector<vk::raii::ImageView> pointLightShadowMapViews;
 		std::vector<vk::raii::Framebuffer> pointLightFramebuffers;
 		std::vector<vk::raii::Framebuffer> directionalLightFramebuffers;
 		std::vector<vk::raii::Framebuffer> spotLightFramebuffers;
 
 		uint32_t directionalLightCnt = 0, pointLightCnt = 0, spotLightCnt = 0;
 
-		uint32_t GetPointLightIndex(int frameCnt, int lightCnt, int faceIndex);
 
 	};
 };
