@@ -20,6 +20,7 @@ namespace DDing {
 		void InitFrameData() override;
 		void InitDescriptors() override;
 		void Render(vk::CommandBuffer commandBuffer) override;
+		void InitShadowDescriptorUpdate(std::vector<DDing::Image>& shadowMaps);
 		void DrawUI() override;
 	protected:
 		void SetBuffer(vk::CommandBuffer commandBuffer);

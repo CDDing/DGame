@@ -80,23 +80,24 @@ void RenderManager::InitGUISampler()
     samplerInfo.setMinLod(-1000);
     samplerInfo.setMaxLod(1000);
     samplerInfo.setMaxAnisotropy(1.0f);
-    GUISampler = vk::raii::Sampler(DGame->context.logical, samplerInfo);
+    DefaultSampler = vk::raii::Sampler(DGame->context.logical, samplerInfo);
 }
 
 void RenderManager::initPasses()
 {
-    //ForwardPass
-    {
-        auto forwardPass = std::make_unique<DDing::ForwardPass>();
-
-        passes.insert({ DDing::PassType::eForward,std::move(forwardPass) });
-
-    }
     //ShadowPass
     {
         auto shadowPass = std::make_unique<DDing::ShadowPass>();
 
         passes.insert({ DDing::PassType::eShadow,std::move(shadowPass) });
+    }
+    //ForwardPass
+    {
+        auto forwardPass = std::make_unique<DDing::ForwardPass>();
+        forwardPass->InitShadowDescriptorUpdate(passes[DDing::PassType::eShadow]->outputImages);
+
+        passes.insert({ DDing::PassType::eForward,std::move(forwardPass) });
+
     }
 }
 

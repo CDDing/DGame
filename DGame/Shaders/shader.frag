@@ -45,6 +45,11 @@ layout(set = 0, binding = 0) uniform GlobalBuffer {
     uint numLights;
 } ubo;
 
+
+layout(set = 0, binding = 1) uniform sampler2D directionalLightShadowMaps[4];
+layout(set = 0, binding = 2) uniform samplerCube pointLightShadowMaps[4];
+layout(set = 0, binding = 3) uniform sampler2D spotLightShadowMaps[4];
+
 layout(location = 0) in vec3 inWorldPos;
 layout(location = 1) in vec2 inUV;
 layout(location = 2) in vec3 inNormal;
@@ -114,6 +119,23 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
+
+float ShadowCalculation(vec3 lightPos)
+{
+    vec3 fragToLight = inWorldPos - lightPos;
+    float currentDepth = length(fragToLight);
+
+    vec3 lightDir = normalize(fragToLight);
+    //TODO support all lights
+    float closestDepth = texture(pointLightShadowMaps[0], lightDir).r;
+
+    
+    float bias = max(0.05 * (1.0 - dot(normalize(getNormalFromMap()), normalize(fragToLight))), 0.005) * 0.01;
+
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
 // ----------------------------------------------------------------------------
 void main() {
     Material mat = materials[pushConst.materialIndex];
@@ -161,8 +183,10 @@ void main() {
         kD *= 1.0 - metallic;	  
 
         float NdotL = max(dot(N, L), 0.0);        
-
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL; 
+        
+        float shadow = ShadowCalculation(lightPosition);
+        
+        Lo += (1- shadow) * (kD * albedo / PI + specular) * radiance * NdotL; 
     }   
     
     vec3 ambient = vec3(0.03) * albedo * ao;
@@ -180,4 +204,6 @@ void main() {
     vec4 viewPos = ubo.view * vec4(inWorldPos, 1.0);
     float depthValue = viewPos.z;
     outDepth = vec4(depthValue, depthValue, depthValue, 1);
+
+
 }

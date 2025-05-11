@@ -3,7 +3,7 @@
 #include "Light.h"
 #include "Transform.h"
 vk::Format DDing::ShadowPass::DepthFormat = vk::Format::eD32Sfloat;
-vk::Format DDing::ShadowPass::SampleFormat = vk::Format::eB8G8R8A8Unorm;
+vk::Format DDing::ShadowPass::SampleFormat = vk::Format::eR32Sfloat;
 
 DDing::ShadowPass::ShadowPass()
 {
@@ -31,8 +31,8 @@ void DDing::ShadowPass::InitRenderPass()
 	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
 	colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
 	colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-	colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
-	colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	colorAttachment.initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	colorAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 
 	vk::AttachmentDescription depthAttachment{};
@@ -300,14 +300,12 @@ void DDing::ShadowPass::InitDescriptors()
 void DDing::ShadowPass::Render(vk::CommandBuffer commandBuffer)
 {
 
-
 	auto currentFrame = DGame->render.currentFrame;
 	auto currentScene = DGame->scene.currentScene;
 
 	auto& frameData = frameDatas[currentFrame];
 
 	SetBuffer(commandBuffer);
-	glm::mat4 viewMatrix = glm::mat4(1.0f);
 
 	vk::Viewport viewport{};
 	viewport.x = 0.0f;
@@ -336,18 +334,19 @@ void DDing::ShadowPass::Render(vk::CommandBuffer commandBuffer)
 				dCnt++;
 				break;
 			case LightType::ePoint:
+			{
 
 				for (int faceIndex = 0; faceIndex < 6; faceIndex++) {
 
-					auto idx = currentFrame* MAX_LIGHTS * 6 + pCnt * 6 + faceIndex;
+					auto idx = currentFrame * MAX_LIGHTS * 6 + pCnt * 6 + faceIndex;
 
 					vk::ClearValue clearValues[2];
-					clearValues[0].color = vk::ClearColorValue{ 1.0f, 1.0f, 1.0f, 1.0f };
+					clearValues[0].color = vk::ClearColorValue{ 999.0f, 0.0f, 0.0f, 1.0f };
 					clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
 					vk::RenderPassBeginInfo renderPassBeginInfo{};
 					renderPassBeginInfo.setRenderPass(renderPass);
-					renderPassBeginInfo.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(GetLength(),GetLength())));
+					renderPassBeginInfo.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(GetLength(), GetLength())));
 					renderPassBeginInfo.setFramebuffer(*pointLightFramebuffers[idx]);
 					renderPassBeginInfo.setClearValues(clearValues);
 
@@ -357,7 +356,7 @@ void DDing::ShadowPass::Render(vk::CommandBuffer commandBuffer)
 
 					uint32_t dynamicOffset = offsetof(TotalShadowBuffer, point) + sizeof(ShadowBuffer) * faceIndex;
 					std::vector<vk::DescriptorSet> descriptorSetList{ *frameData.descriptorSet };
-					commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSetList, {dynamicOffset});
+					commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSetList, { dynamicOffset });
 					for (auto& rootNode : currentScene->GetRootNodes()) {
 						auto node = rootNode;
 						node->Draw(commandBuffer, *pipeline->GetLayout());
@@ -369,8 +368,12 @@ void DDing::ShadowPass::Render(vk::CommandBuffer commandBuffer)
 
 				}
 
+				auto idx = currentFrame * MAX_LIGHTS * 3 + MAX_LIGHTS + pCnt;
+
+
 				pCnt++;
 				break;
+			}
 			case LightType::eSpot:
 				//TODO
 
@@ -499,6 +502,11 @@ void DDing::ShadowPass::createOutputImages()
 
 		}
 	}
+	for (auto& outputImage : outputImages) {
+		DGame->context.immediate_submit([&](vk::CommandBuffer commandBuffer) {
+			outputImage.setImageLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal);
+			});
+	}
 }
 
 
@@ -524,8 +532,7 @@ void DDing::ShadowPass::SetBuffer(vk::CommandBuffer commandBuffer)
 				break;
 			case LightType::ePoint:
 				point.lightPosition = transform->GetWorldPosition();
-				point.projection = glm::perspectiveFovLH(glm::radians(90.0f), static_cast<float>(DGame->swapChain.extent.width), static_cast<float>(DGame->swapChain.extent.height), 0.01f, 100.0f);
-
+				point.projection = glm::perspectiveFovLH(glm::radians(90.0f), static_cast<float>(GetLength()), static_cast<float>(GetLength()), 0.1f, 100.0f);
 				point.projection[1][1] *= -1;
 				
 				auto viewMatrixPositiveX = glm::lookAtLH(transform->GetWorldPosition(), transform->GetWorldPosition() + glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
@@ -613,7 +620,7 @@ void DDing::ShadowPass::createPointLightShadowMapViews()
 			for (int j = 0; j < 6; j++) {
 				vk::ImageViewCreateInfo imageViewInfo{};
 				imageViewInfo.setViewType(vk::ImageViewType::e2D);
-				imageViewInfo.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, i, 1));
+				imageViewInfo.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, j, 1));
 				imageViewInfo.setFormat(SampleFormat);
 				//3 means light types cnt
 				imageViewInfo.setImage(outputImages[frameCnt * MAX_LIGHTS * 3 + MAX_LIGHTS + i ].image);

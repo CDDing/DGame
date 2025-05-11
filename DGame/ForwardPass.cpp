@@ -50,7 +50,7 @@ void DDing::ForwardPass::InitRenderPass()
 	depthGUIAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
 	depthGUIAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
 	depthGUIAttachment.initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	depthGUIAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	depthGUIAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 	vk::AttachmentDescription depthAttachment{};
 	depthAttachment.format = DDing::ForwardPass::DepthFormat;
@@ -366,10 +366,73 @@ void DDing::ForwardPass::Render(vk::CommandBuffer commandBuffer)
 
 	commandBuffer.endRenderPass();
 
-	depthImageGUI[currentFrame].layout = vk::ImageLayout::eColorAttachmentOptimal;
-	depthImageGUI[currentFrame].setImageLayout(commandBuffer, vk::ImageLayout::eShaderReadOnlyOptimal);
+}
+
+void DDing::ForwardPass::InitShadowDescriptorUpdate(std::vector<DDing::Image>& shadowMaps)
+{
+	for (int frameCnt = 0; frameCnt < FRAME_CNT; frameCnt++) {
+
+		auto& frameData = frameDatas[frameCnt];
+
+		std::vector<vk::WriteDescriptorSet> descriptorWrites;
+
+		std::array<vk::DescriptorImageInfo, MAX_LIGHTS> directionalLights;
+		std::array<vk::DescriptorImageInfo, MAX_LIGHTS> pointLights;
+		std::array<vk::DescriptorImageInfo, MAX_LIGHTS> spotLights;
+
+		for (int i = 0; i < MAX_LIGHTS; i++) {
+			vk::DescriptorImageInfo directionalInfo{};
+			directionalInfo.imageView = shadowMaps[frameCnt * MAX_LIGHTS * 3 + i].imageView;
+			directionalInfo.sampler = *DGame->render.DefaultSampler;
+			directionalInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			directionalLights[i] = directionalInfo;
+
+		}
+		vk::WriteDescriptorSet descriptorWrite{};
+		descriptorWrite.dstSet = *frameData.descriptorSet;
+		descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		descriptorWrite.dstBinding = 1;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorCount = MAX_LIGHTS;
+		descriptorWrite.pImageInfo = directionalLights.data();
+		descriptorWrites.push_back(descriptorWrite);
+
+		for (int i = 0; i < MAX_LIGHTS; i++) {
+			vk::DescriptorImageInfo pointInfo{};
+			pointInfo.imageView = shadowMaps[frameCnt * MAX_LIGHTS * 3 + MAX_LIGHTS +  i].imageView;
+			pointInfo.sampler = *DGame->render.DefaultSampler;
+			pointInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			pointLights[i] = pointInfo;
+
+		}
+		descriptorWrite.dstSet = *frameData.descriptorSet;
+		descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		descriptorWrite.dstBinding = 2;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorCount = MAX_LIGHTS;
+		descriptorWrite.pImageInfo = pointLights.data();
+		descriptorWrites.push_back(descriptorWrite);
 
 
+		for (int i = 0; i < MAX_LIGHTS; i++) {
+			vk::DescriptorImageInfo spotInfo{};
+			spotInfo.imageView = shadowMaps[frameCnt * MAX_LIGHTS * 3 + MAX_LIGHTS * 2 + i].imageView;
+			spotInfo.sampler = *DGame->render.DefaultSampler;
+			spotInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			spotLights[i] = spotInfo;
+
+		}
+		descriptorWrite.dstSet = *frameData.descriptorSet;
+		descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		descriptorWrite.dstBinding = 3;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorCount = MAX_LIGHTS;
+		descriptorWrite.pImageInfo = spotLights.data();
+		descriptorWrites.push_back(descriptorWrite);
+
+		DGame->context.logical.updateDescriptorSets(descriptorWrites, {});
+
+	}
 }
 
 void DDing::ForwardPass::DrawUI()
@@ -472,8 +535,28 @@ void DDing::ForwardPass::InitDescriptors()
 		layoutBinding.descriptorCount = 1;
 		layoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
 
+		vk::DescriptorSetLayoutBinding directionalBinding{};
+		directionalBinding.binding = 1;
+		directionalBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		directionalBinding.descriptorCount = MAX_LIGHTS;
+		directionalBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+
+		vk::DescriptorSetLayoutBinding pointBinding{};
+		pointBinding.binding = 2;
+		pointBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		pointBinding.descriptorCount = MAX_LIGHTS;
+		pointBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+
+		vk::DescriptorSetLayoutBinding spotBinding{};
+		spotBinding.binding = 3;
+		spotBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		spotBinding.descriptorCount = MAX_LIGHTS;
+		spotBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+
+		std::vector<vk::DescriptorSetLayoutBinding> bindings{ layoutBinding,directionalBinding,pointBinding,spotBinding };
+
 		vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-		layoutInfo.setBindings(layoutBinding);
+		layoutInfo.setBindings(bindings);
 		sceneSetLayout = DGame->context.logical.createDescriptorSetLayout(layoutInfo);
 	}
 	{
@@ -578,7 +661,7 @@ void DDing::ForwardPass::initDepthImageGUI()
 			});
 
 
-		depthImageDescriptorSet.push_back(ImGui_ImplVulkan_AddTexture(*DGame->render.GUISampler, depthImageGUI[i].imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+		depthImageDescriptorSet.push_back(ImGui_ImplVulkan_AddTexture(*DGame->render.DefaultSampler, depthImageGUI[i].imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
 
 	}
 

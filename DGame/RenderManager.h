@@ -32,7 +32,7 @@ public:
 	void DrawUI();
 
 	uint32_t currentFrame = 0;
-	vk::raii::Sampler GUISampler = nullptr;
+	vk::raii::Sampler DefaultSampler = nullptr;
 
 	std::vector<FrameData> frameDatas = {};
 private:

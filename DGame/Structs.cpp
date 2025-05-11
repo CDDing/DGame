@@ -183,7 +183,7 @@ void DDing::Image::setImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayo
     imageMemoryBarrier.subresourceRange.aspectMask = aspectMask;
     imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
     imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-    imageMemoryBarrier.subresourceRange.layerCount = 1;
+    imageMemoryBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
     imageMemoryBarrier.subresourceRange.levelCount = mipLevel;
     imageMemoryBarrier.srcAccessMask = (vk::AccessFlagBits)0;
     imageMemoryBarrier.dstAccessMask = (vk::AccessFlagBits)0;
