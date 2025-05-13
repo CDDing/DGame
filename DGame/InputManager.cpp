@@ -209,8 +209,8 @@ void InputManager::Init()
 		initInfo.Instance = *DGame->context.instance;
 		initInfo.PhysicalDevice = *DGame->context.physical;
 		initInfo.Device = *DGame->context.logical;
-		initInfo.QueueFamily = DDing::Context::QueueType::GRAPHICS;
-		initInfo.Queue = DGame->context.GetQueue(DDing::Context::QueueType::GRAPHICS);
+		initInfo.QueueFamily = DDing::Context::QueueType::eGraphics;
+		initInfo.Queue = DGame->context.GetQueue(DDing::Context::QueueType::eGraphics);
 		initInfo.PipelineCache = *pipelineCache;
 		initInfo.DescriptorPool = *descriptorPool;
 		initInfo.RenderPass = *renderPass;

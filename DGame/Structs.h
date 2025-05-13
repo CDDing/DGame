@@ -23,6 +23,9 @@ struct alignas(16) sLight {
     glm::vec3 color;
     float intensity;
     glm::vec3 position;
+    int type;
+    glm::vec3 direction;
+    float innerCone, outerCone;
 };
 
 struct alignas(16) GlobalBuffer {

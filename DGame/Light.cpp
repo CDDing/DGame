@@ -4,7 +4,21 @@
 void DDing::Light::DrawUI()
 {
     if (ImGui::CollapsingHeader("Light")) {
+        const char* lightTypeNames[] = { "Directional", "Point", "Spot" };  // Assuming 3 types
+        const char* currentLightType = lightTypeNames[static_cast<int>(type)];
 
+        if (ImGui::BeginCombo("Light Type", currentLightType)) {
+            for (int i = 0; i < IM_ARRAYSIZE(lightTypeNames); ++i) {
+                bool isSelected = (type == static_cast<LightType>(i));
+                if (ImGui::Selectable(lightTypeNames[i], isSelected)) {
+                    type = static_cast<LightType>(i);  // Update the LightType
+                }
+                if (isSelected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
         if (ImGui::ColorButton("Light Color", ImVec4(color.x, color.y, color.z, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 30))) {
             // When clicked, open the color picker dialog
             ImGui::OpenPopup("Color Picker Popup");

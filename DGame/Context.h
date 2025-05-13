@@ -18,8 +18,8 @@ namespace DDing {
 		std::vector<vk::Queue> queues;
 	public:
 		enum QueueType {
-			GRAPHICS,
-			PRESENT,
+			eGraphics,
+			ePresent,
 			END
 		};
 

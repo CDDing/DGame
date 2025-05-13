@@ -368,24 +368,26 @@ void DDing::ForwardPass::Render(vk::CommandBuffer commandBuffer)
 
 }
 
-void DDing::ForwardPass::InitShadowDescriptorUpdate(std::vector<DDing::Image>& shadowMaps)
+void DDing::ForwardPass::InitShadowDescriptorUpdate(RenderPass* pass)
 {
+	auto shadowPass = static_cast<ShadowPass*>(pass);
+	auto& shadowMaps = shadowPass->outputImages;
 	for (int frameCnt = 0; frameCnt < FRAME_CNT; frameCnt++) {
 
 		auto& frameData = frameDatas[frameCnt];
+		auto& shadowFrameData = shadowPass->frameDatas[frameCnt];
 
 		std::vector<vk::WriteDescriptorSet> descriptorWrites;
 
-		std::array<vk::DescriptorImageInfo, MAX_LIGHTS> directionalLights;
-		std::array<vk::DescriptorImageInfo, MAX_LIGHTS> pointLights;
-		std::array<vk::DescriptorImageInfo, MAX_LIGHTS> spotLights;
+		std::array<vk::DescriptorImageInfo, MAX_LIGHTS> shadowMapInfos;
+		std::array<vk::DescriptorImageInfo, MAX_LIGHTS> shadowCubeMapInfos;
 
 		for (int i = 0; i < MAX_LIGHTS; i++) {
-			vk::DescriptorImageInfo directionalInfo{};
-			directionalInfo.imageView = shadowMaps[frameCnt * MAX_LIGHTS * 3 + i].imageView;
-			directionalInfo.sampler = *DGame->render.DefaultSampler;
-			directionalInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-			directionalLights[i] = directionalInfo;
+			vk::DescriptorImageInfo shadowMapInfo{};
+			shadowMapInfo.imageView = shadowMaps[frameCnt * MAX_LIGHTS * 2 + i].imageView;
+			shadowMapInfo.sampler = *DGame->render.DefaultSampler;
+			shadowMapInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			shadowMapInfos[i] = shadowMapInfo;
 
 		}
 		vk::WriteDescriptorSet descriptorWrite{};
@@ -394,15 +396,15 @@ void DDing::ForwardPass::InitShadowDescriptorUpdate(std::vector<DDing::Image>& s
 		descriptorWrite.dstBinding = 1;
 		descriptorWrite.dstArrayElement = 0;
 		descriptorWrite.descriptorCount = MAX_LIGHTS;
-		descriptorWrite.pImageInfo = directionalLights.data();
+		descriptorWrite.pImageInfo = shadowMapInfos.data();
 		descriptorWrites.push_back(descriptorWrite);
 
 		for (int i = 0; i < MAX_LIGHTS; i++) {
-			vk::DescriptorImageInfo pointInfo{};
-			pointInfo.imageView = shadowMaps[frameCnt * MAX_LIGHTS * 3 + MAX_LIGHTS +  i].imageView;
-			pointInfo.sampler = *DGame->render.DefaultSampler;
-			pointInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-			pointLights[i] = pointInfo;
+			vk::DescriptorImageInfo shadowCubemapInfo{};
+			shadowCubemapInfo.imageView = shadowMaps[frameCnt * MAX_LIGHTS * 2 + MAX_LIGHTS +  i].imageView;
+			shadowCubemapInfo.sampler = *DGame->render.DefaultSampler;
+			shadowCubemapInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			shadowCubeMapInfos[i] = shadowCubemapInfo;
 
 		}
 		descriptorWrite.dstSet = *frameData.descriptorSet;
@@ -410,25 +412,23 @@ void DDing::ForwardPass::InitShadowDescriptorUpdate(std::vector<DDing::Image>& s
 		descriptorWrite.dstBinding = 2;
 		descriptorWrite.dstArrayElement = 0;
 		descriptorWrite.descriptorCount = MAX_LIGHTS;
-		descriptorWrite.pImageInfo = pointLights.data();
+		descriptorWrite.pImageInfo = shadowCubeMapInfos.data();
 		descriptorWrites.push_back(descriptorWrite);
 
 
-		for (int i = 0; i < MAX_LIGHTS; i++) {
-			vk::DescriptorImageInfo spotInfo{};
-			spotInfo.imageView = shadowMaps[frameCnt * MAX_LIGHTS * 3 + MAX_LIGHTS * 2 + i].imageView;
-			spotInfo.sampler = *DGame->render.DefaultSampler;
-			spotInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-			spotLights[i] = spotInfo;
+		vk::DescriptorBufferInfo lightMatrixInfo{};
+		lightMatrixInfo.buffer = shadowFrameData.uniformBuffer.buffer;
+		lightMatrixInfo.offset = 0;
+		lightMatrixInfo.range = sizeof(DDing::ShadowPass::TotalShadowBuffer);
 
-		}
 		descriptorWrite.dstSet = *frameData.descriptorSet;
-		descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
 		descriptorWrite.dstBinding = 3;
 		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorCount = MAX_LIGHTS;
-		descriptorWrite.pImageInfo = spotLights.data();
+		descriptorWrite.descriptorCount = 1;
+		descriptorWrite.pBufferInfo = &lightMatrixInfo;
 		descriptorWrites.push_back(descriptorWrite);
+
 
 		DGame->context.logical.updateDescriptorSets(descriptorWrites, {});
 
@@ -464,6 +464,10 @@ void DDing::ForwardPass::SetBuffer(vk::CommandBuffer commandBuffer)
 			lights[cnt].color = lightComponent->color;
 			lights[cnt].intensity = lightComponent->intensity;
 			lights[cnt].position = go->GetComponent<DDing::Transform>()->GetWorldPosition();
+			lights[cnt].direction = go->GetComponent<DDing::Transform>()->GetLook();
+			lights[cnt].type = static_cast<int>(lightComponent->type);
+			lights[cnt].innerCone = lightComponent->innerCone;
+			lights[cnt].outerCone = lightComponent->outerCone;
 			cnt++;
 		}
 	}
@@ -529,31 +533,43 @@ void DDing::ForwardPass::InitDescriptors()
 {
 
 	{
+		std::vector<vk::DescriptorSetLayoutBinding> bindings{ };
+
 		vk::DescriptorSetLayoutBinding layoutBinding{};
 		layoutBinding.binding = 0;
 		layoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
 		layoutBinding.descriptorCount = 1;
 		layoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment;
+		bindings.push_back(layoutBinding);
 
-		vk::DescriptorSetLayoutBinding directionalBinding{};
-		directionalBinding.binding = 1;
-		directionalBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		directionalBinding.descriptorCount = MAX_LIGHTS;
-		directionalBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		vk::DescriptorSetLayoutBinding shadowMapBinding{};
+		shadowMapBinding.binding = 1;
+		shadowMapBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		shadowMapBinding.descriptorCount = MAX_LIGHTS;
+		shadowMapBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		bindings.push_back(shadowMapBinding);
 
-		vk::DescriptorSetLayoutBinding pointBinding{};
-		pointBinding.binding = 2;
-		pointBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		pointBinding.descriptorCount = MAX_LIGHTS;
-		pointBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		vk::DescriptorSetLayoutBinding shadowCubemapBinding{};
+		shadowCubemapBinding.binding = 2;
+		shadowCubemapBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		shadowCubemapBinding.descriptorCount = MAX_LIGHTS;
+		shadowCubemapBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		bindings.push_back(shadowCubemapBinding);
 
-		vk::DescriptorSetLayoutBinding spotBinding{};
-		spotBinding.binding = 3;
-		spotBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		spotBinding.descriptorCount = MAX_LIGHTS;
-		spotBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
 
-		std::vector<vk::DescriptorSetLayoutBinding> bindings{ layoutBinding,directionalBinding,pointBinding,spotBinding };
+		vk::DescriptorSetLayoutBinding directionalMatrixBinding{};
+		directionalMatrixBinding.binding = 3;
+		directionalMatrixBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+		directionalMatrixBinding.descriptorCount = 1;
+		directionalMatrixBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		bindings.push_back(directionalMatrixBinding);
+
+		vk::DescriptorSetLayoutBinding spotMatrixBinding{};
+		spotMatrixBinding.binding = 4;
+		spotMatrixBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+		spotMatrixBinding.descriptorCount = 1;
+		spotMatrixBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		bindings.push_back(spotMatrixBinding);
 
 		vk::DescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.setBindings(bindings);

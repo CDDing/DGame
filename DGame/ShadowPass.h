@@ -4,6 +4,9 @@ namespace DDing
 {
 	class ShadowPass : public RenderPass
 	{
+
+
+	public:
 		struct alignas(64) ShadowBuffer {
 			glm::mat4 view;
 			glm::mat4 projection;
@@ -23,10 +26,9 @@ namespace DDing
 			DDing::Buffer stagingBuffer;
 
 			std::vector<std::vector<vk::raii::ImageView>> pointLightShadowMapViews;
+			std::vector<vk::raii::Framebuffer> shadowMapFramebuffers;
+			std::vector<vk::raii::Framebuffer> shadowCubeMapFramebuffers;
 		};
-
-
-	public:
 		static vk::Format DepthFormat;
 		static vk::Format SampleFormat;
 		ShadowPass();
@@ -39,6 +41,7 @@ namespace DDing
 		void DrawUI() override;
 
 		void createOutputImages() override;
+		std::vector<ShadowFrameData> frameDatas;
 	protected:
 		void SetBuffer(vk::CommandBuffer commandBuffer);
 		uint32_t GetLength() { return std::min(DGame->swapChain.extent.width, DGame->swapChain.extent.height); }
@@ -48,15 +51,9 @@ namespace DDing
 		DDing::Image depthImage;
 
 
-		std::vector<ShadowFrameData> frameDatas;
 
 		vk::raii::DescriptorSetLayout sceneSetLayout = nullptr;
 
-		std::vector<vk::raii::Framebuffer> pointLightFramebuffers;
-		std::vector<vk::raii::Framebuffer> directionalLightFramebuffers;
-		std::vector<vk::raii::Framebuffer> spotLightFramebuffers;
-
-		uint32_t directionalLightCnt = 0, pointLightCnt = 0, spotLightCnt = 0;
 
 
 	};

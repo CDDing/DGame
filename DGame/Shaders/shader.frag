@@ -35,6 +35,10 @@ struct Light{
     vec3 color;
     float intensity;
     vec3 position;
+    int type;
+    vec3 direction;
+    float innerCone, outerCone;
+    float pad1,pad2,pad3;
 };
 layout(set = 0, binding = 0) uniform GlobalBuffer {
     mat4 view;
@@ -45,11 +49,18 @@ layout(set = 0, binding = 0) uniform GlobalBuffer {
     uint numLights;
 } ubo;
 
-
-layout(set = 0, binding = 1) uniform sampler2D directionalLightShadowMaps[4];
-layout(set = 0, binding = 2) uniform samplerCube pointLightShadowMaps[4];
-layout(set = 0, binding = 3) uniform sampler2D spotLightShadowMaps[4];
-
+struct MatrixBuffer{
+    mat4 view;
+    mat4 projection;
+    mat4 padding;
+};
+layout(set = 0, binding = 1) uniform sampler2D shadowMaps[4];
+layout(set = 0, binding = 2) uniform samplerCube shadowCubeMaps[4];
+layout(set = 0, binding = 3) uniform lightMatrixBuffer{
+    MatrixBuffer directional[4];
+    MatrixBuffer point[4][6];
+    MatrixBuffer spot[4];
+}lightMatrix;
 layout(location = 0) in vec3 inWorldPos;
 layout(location = 1) in vec2 inUV;
 layout(location = 2) in vec3 inNormal;
@@ -120,22 +131,6 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float ShadowCalculation(vec3 lightPos)
-{
-    vec3 fragToLight = inWorldPos - lightPos;
-    float currentDepth = length(fragToLight);
-
-    vec3 lightDir = normalize(fragToLight);
-    //TODO support all lights
-    float closestDepth = texture(pointLightShadowMaps[0], lightDir).r;
-
-    
-    float bias = max(0.05 * (1.0 - dot(normalize(getNormalFromMap()), normalize(fragToLight))), 0.005) * 0.01;
-
-    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
-
-    return shadow;
-}
 // ----------------------------------------------------------------------------
 void main() {
     Material mat = materials[pushConst.materialIndex];
@@ -161,32 +156,63 @@ void main() {
     F0 = mix(F0, albedo, metallic);
 
     vec3 Lo = vec3(0.0);
+
+    int dCnt =0, pCnt =0, sCnt =0;
     for(int i = 0; i < ubo.numLights; ++i) 
     {
-        vec3 lightPosition = ubo.lights[i].position;
-        vec3 L = normalize(lightPosition - inWorldPos);
-        vec3 H = normalize(V + L);
-        float distance = length(lightPosition - inWorldPos);
-        float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = ubo.lights[i].color * ubo.lights[i].intensity * attenuation;
+        vec3 L;
+        float attenuation = 1.0;
+        float shadow = 0.0;
+        float NdotL;
+        vec3 radiance;
+        
+        if (ubo.lights[i].type == 0) // Directional Light
+        {
+            L = normalize(-ubo.lights[i].direction);
+            radiance = ubo.lights[i].color * ubo.lights[i].intensity;
+            //shadow = directionalLightShadowCalculation(ubo.lights[i].position, dCnt);
+            dCnt++;
+        }
+        else
+        {
+            vec3 lightDir = ubo.lights[i].position - inWorldPos;
+            float distance = length(lightDir);
+            L = normalize(lightDir);
 
+            attenuation = 1.0 / (distance * distance);
+            
+            //shadow = pointLightShadowCalculation(ubo.lights[i].position, pCnt);
+            pCnt++;
+            if (ubo.lights[i].type == 2) // Spot Light
+            {
+                float cosTheta = dot(L, normalize(-ubo.lights[i].direction));
+                float epsilon = ubo.lights[i].innerCone - ubo.lights[i].outerCone;
+                float intensity = clamp((cosTheta - ubo.lights[i].outerCone) / epsilon, 0.0, 1.0);
+                //attenuation *= intensity;
+            }
+
+            radiance = ubo.lights[i].color * ubo.lights[i].intensity * attenuation;
+
+
+        }
+
+        vec3 H = normalize(V + L);
         float NDF = DistributionGGX(N, H, roughness);   
         float G   = GeometrySmith(N, V, L, roughness);      
         vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
-           
-        vec3 numerator    = NDF * G * F; 
+
+        vec3 numerator = NDF * G * F; 
         float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; 
         vec3 specular = numerator / denominator;
-        
+
         vec3 kS = F;
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;	  
 
-        float NdotL = max(dot(N, L), 0.0);        
-        
-        float shadow = ShadowCalculation(lightPosition);
-        
-        Lo += (1- shadow) * (kD * albedo / PI + specular) * radiance * NdotL; 
+        NdotL = max(dot(N, L), 0.0);        
+
+
+        Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL; 
     }   
     
     vec3 ambient = vec3(0.03) * albedo * ao;

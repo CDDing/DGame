@@ -1,5 +1,6 @@
 #pragma once
 #include "RenderPass.h"
+#include "ShadowPass.h"
 namespace DDing {
 	class ForwardPass : public RenderPass
 	{
@@ -20,7 +21,7 @@ namespace DDing {
 		void InitFrameData() override;
 		void InitDescriptors() override;
 		void Render(vk::CommandBuffer commandBuffer) override;
-		void InitShadowDescriptorUpdate(std::vector<DDing::Image>& shadowMaps);
+		void InitShadowDescriptorUpdate(RenderPass* pass);
 		void DrawUI() override;
 	protected:
 		void SetBuffer(vk::CommandBuffer commandBuffer);

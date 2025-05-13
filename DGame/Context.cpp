@@ -30,7 +30,7 @@ void DDing::Context::immediate_submit(std::function<void(vk::CommandBuffer comma
 
 	vk::SubmitInfo submitInfo{};
 	submitInfo.setCommandBuffers({ *immediate.commandBuffer });
-	GetQueue(QueueType::GRAPHICS).submit(submitInfo, *immediate.fence);
+	GetQueue(QueueType::eGraphics).submit(submitInfo, *immediate.fence);
 
 	logical.waitForFences(*immediate.fence, true, UINT64_MAX);
 }
@@ -155,8 +155,8 @@ vk::raii::Device DDing::Context::createLogicalDevice()
 		queues.push_back(q);
 	}
 
-	GetQueue(QueueType::GRAPHICS) = logicalDevice.getQueue(indices.graphicsFamily.value(), 0);
-	GetQueue(QueueType::PRESENT) = logicalDevice.getQueue(indices.presentFamily.value(), 0);
+	GetQueue(QueueType::eGraphics) = logicalDevice.getQueue(indices.graphicsFamily.value(), 0);
+	GetQueue(QueueType::ePresent) = logicalDevice.getQueue(indices.presentFamily.value(), 0);
 	return logicalDevice;
 }
 

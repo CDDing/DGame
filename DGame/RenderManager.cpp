@@ -94,7 +94,7 @@ void RenderManager::initPasses()
     //ForwardPass
     {
         auto forwardPass = std::make_unique<DDing::ForwardPass>();
-        forwardPass->InitShadowDescriptorUpdate(passes[DDing::PassType::eShadow]->outputImages);
+        forwardPass->InitShadowDescriptorUpdate(passes[DDing::PassType::eShadow].get());
 
         passes.insert({ DDing::PassType::eForward,std::move(forwardPass) });
 
@@ -145,7 +145,7 @@ void RenderManager::submitCommandBuffer(vk::CommandBuffer commandBuffer)
     submitInfo.setWaitSemaphores(*frameData.imageAvaiable);
     submitInfo.setWaitDstStageMask(waitStages);
 
-    DGame->context.GetQueue(DDing::Context::QueueType::GRAPHICS).submit(submitInfo, *frameData.waitFrame);
+    DGame->context.GetQueue(DDing::Context::QueueType::eGraphics).submit(submitInfo, *frameData.waitFrame);
 };
 
 void RenderManager::presentCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
@@ -158,7 +158,7 @@ void RenderManager::presentCommandBuffer(vk::CommandBuffer commandBuffer, uint32
     presentInfo.setImageIndices(imageIndex);
     presentInfo.setPResults(nullptr);
 
-    auto result = DGame->context.GetQueue(DDing::Context::QueueType::PRESENT).presentKHR(presentInfo);
+    auto result = DGame->context.GetQueue(DDing::Context::QueueType::ePresent).presentKHR(presentInfo);
 }
 
 void RenderManager::copyResultToSwapChain(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
