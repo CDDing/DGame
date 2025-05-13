@@ -37,7 +37,11 @@ void DDing::Light::DrawUI()
         if (ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 10.0f)) {
            
         }
-
+        // Add inner and outer cone sliders only for Spot lights
+        if (type == LightType::eSpot) {
+            ImGui::SliderFloat("Inner Cone Angle", &innerCone, 0.0f, outerCone, "%.2f¡Æ");
+            ImGui::SliderFloat("Outer Cone Angle", &outerCone, innerCone, 90.0f, "%.2f¡Æ");
+        }
     }
 }
 

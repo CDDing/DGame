@@ -466,8 +466,8 @@ void DDing::ForwardPass::SetBuffer(vk::CommandBuffer commandBuffer)
 			lights[cnt].position = go->GetComponent<DDing::Transform>()->GetWorldPosition();
 			lights[cnt].direction = go->GetComponent<DDing::Transform>()->GetLook();
 			lights[cnt].type = static_cast<int>(lightComponent->type);
-			lights[cnt].innerCone = lightComponent->innerCone;
-			lights[cnt].outerCone = lightComponent->outerCone;
+			lights[cnt].innerCone = glm::cos(glm::radians(lightComponent->innerCone));
+			lights[cnt].outerCone = glm::cos(glm::radians(lightComponent->outerCone));
 			cnt++;
 		}
 	}

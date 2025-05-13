@@ -71,6 +71,35 @@ layout(location = 1) out vec4 outDepth;
 
 const float PI = 3.14159265359;
 
+float Shadow(sampler2D shadowMap, mat4 lightViewProjection) {
+    vec4 lightSpacePosition = lightViewProjection * vec4(inWorldPos, 1.0);
+    vec3 shadowCoord = lightSpacePosition.xyz / lightSpacePosition.w;
+
+    shadowCoord.xy = shadowCoord.xy * 0.5 + 0.5;
+
+    if (shadowCoord.z > 1.0 || shadowCoord.z < 0.0)
+        return 1.0;
+
+    float closestDepth = texture(shadowMap, shadowCoord.xy).r;
+    float bias = 0.0005;
+    float currentDepth = shadowCoord.z;
+
+    float shadow = currentDepth - bias > closestDepth ? 0.0 : 1.0;
+    return shadow;
+}
+float ShadowCubeMap(samplerCube shadowMap, Light light){
+    vec3 lightDir = inWorldPos - light.position;
+    
+    float closestDepth = texture(shadowMap, normalize(lightDir)).r;
+    float currentDepth = length(lightDir);
+
+    float bias = 0.0005;
+
+    float shadow = currentDepth - bias > closestDepth ? 0.0 : 1.0;
+
+    return shadow;
+
+}
 vec3 getNormalFromMap()
 {
     Material mat = materials[pushConst.materialIndex];
@@ -155,44 +184,60 @@ void main() {
     vec3 F0 = vec3(0.04); 
     F0 = mix(F0, albedo, metallic);
 
-    vec3 Lo = vec3(0.0);
+    vec3 finalColor = vec3(0.0);
 
-    int dCnt =0, pCnt =0, sCnt =0;
-    for(int i = 0; i < ubo.numLights; ++i) 
+    //Temp
+    vec3 test = vec3(1.0);
+    int lightCnt = 0;
+    for(int i = 0; i < ubo.numLights; i++) 
     {
+        Light light = ubo.lights[i];
         vec3 L;
         float attenuation = 1.0;
         float shadow = 0.0;
         float NdotL;
-        vec3 radiance;
         
-        if (ubo.lights[i].type == 0) // Directional Light
+        if (light.type == 0) // Directional Light
         {
             L = normalize(-ubo.lights[i].direction);
-            radiance = ubo.lights[i].color * ubo.lights[i].intensity;
-            //shadow = directionalLightShadowCalculation(ubo.lights[i].position, dCnt);
-            dCnt++;
-        }
-        else
-        {
-            vec3 lightDir = ubo.lights[i].position - inWorldPos;
-            float distance = length(lightDir);
-            L = normalize(lightDir);
-
-            attenuation = 1.0 / (distance * distance);
             
-            //shadow = pointLightShadowCalculation(ubo.lights[i].position, pCnt);
-            pCnt++;
-            if (ubo.lights[i].type == 2) // Spot Light
-            {
-                float cosTheta = dot(L, normalize(-ubo.lights[i].direction));
-                float epsilon = ubo.lights[i].innerCone - ubo.lights[i].outerCone;
-                float intensity = clamp((cosTheta - ubo.lights[i].outerCone) / epsilon, 0.0, 1.0);
-                //attenuation *= intensity;
-            }
+            mat4 lightViewProjection = lightMatrix.directional[i].projection * lightMatrix.directional[i].view;
+            float currentDepth = length(inWorldPos - light.position);
 
-            radiance = ubo.lights[i].color * ubo.lights[i].intensity * attenuation;
+            attenuation *= Shadow(shadowMaps[i], lightViewProjection);
 
+        }
+        else if(light.type == 1)//Point
+        { 
+            
+            L = normalize(light.position - inWorldPos);
+            float distance = length(light.position - inWorldPos);
+            float constant = 1.0;
+            float linear = 0.09;
+            float quadratic = 0.032;
+            attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));
+        
+            
+            //mat4 lightViewProjection = lightMatrix.point[i].projection * lightMatrix.point[i].view;
+
+            attenuation *= ShadowCubeMap(shadowCubeMaps[i], light);
+        }
+        else if(light.type == 2) //spot
+        {
+            L = normalize(light.position - inWorldPos);
+            float distance = length(light.position - inWorldPos);
+            float constant = 1.0;
+            float linear = 0.09;
+            float quadratic = 0.032;
+            attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));
+
+            float theta = dot(L, normalize(-light.direction));
+            float epsilon = max(light.innerCone - light.outerCone, 0.001);
+            attenuation *= clamp((theta - light.outerCone) / epsilon, 0.0, 1.0);
+            
+            mat4 lightViewProjection = lightMatrix.spot[i].projection * lightMatrix.spot[i].view;
+            float currentDepth = length(inWorldPos - light.position);
+            //attenuation *= Shadow(shadowMaps[i], lightViewProjection);
 
         }
 
@@ -211,20 +256,23 @@ void main() {
 
         NdotL = max(dot(N, L), 0.0);        
 
+        vec3 diffuse = kD * albedo / PI;
+        
+        vec3 radiance = light.color * light.intensity * NdotL * attenuation;
 
-        Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL; 
+        finalColor += (diffuse + specular) * radiance; 
     }   
     
     vec3 ambient = vec3(0.03) * albedo * ao;
     
-    vec3 color = ambient + Lo;
+    vec3 color = ambient + finalColor;
 
     // HDR tonemapping
     //color = color / (color + vec3(1.0));
     // gamma correct
     color = pow(color, vec3(1.0/2.2)); 
-
-    outColor= vec4(color, 1.0);
+    color = clamp(color,vec3(0.0),vec3(1.0));
+    outColor= vec4(color * test, 1.0);
 
     //Draw Depth
     vec4 viewPos = ubo.view * vec4(inWorldPos, 1.0);

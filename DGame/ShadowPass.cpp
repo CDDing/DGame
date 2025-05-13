@@ -595,7 +595,7 @@ void DDing::ShadowPass::SetBuffer(vk::CommandBuffer commandBuffer)
 			{
 				buffer.lightPosition = transform->GetWorldPosition();
 
-				float fov = lightComponent->outerCone;
+				float fov = glm::radians(lightComponent->outerCone);
 				buffer.projection = glm::perspectiveFovLH(fov, static_cast<float>(GetLength()), static_cast<float>(GetLength()), 0.1f, 100.0f);
 				buffer.projection[1][1] *= -1;
 
@@ -700,7 +700,7 @@ void DDing::ShadowPass::createFramebuffers()
 			//ShadowMaps : Directional, Spot
 			{
 				std::array<vk::ImageView, 2> attachments = {
-					outputImages[frameCnt * MAX_LIGHTS * 3 + i].imageView,
+					outputImages[frameCnt * MAX_LIGHTS * 2 + i].imageView,
 					depthImage.imageView,
 				};
 				vk::FramebufferCreateInfo framebufferInfo{};
