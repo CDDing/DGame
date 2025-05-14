@@ -10,8 +10,6 @@ layout(set = 0, binding = 0) uniform GlobalBuffer {
 } ubo;
 
 void main() {
-    //Draw Depth
-    float dist = length(ubo.cameraPosition - inWorldPos);
-    outDistance = dist;
 
+    outDistance = (1,0,0,0);
 }

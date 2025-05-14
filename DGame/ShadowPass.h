@@ -30,7 +30,6 @@ namespace DDing
 			std::vector<vk::raii::Framebuffer> shadowCubeMapFramebuffers;
 		};
 		static vk::Format DepthFormat;
-		static vk::Format SampleFormat;
 		ShadowPass();
 		~ShadowPass();
 		void InitRenderPass() override;
@@ -45,10 +44,8 @@ namespace DDing
 	protected:
 		void SetBuffer(vk::CommandBuffer commandBuffer);
 		uint32_t GetLength() { return std::min(DGame->swapChain.extent.width, DGame->swapChain.extent.height); }
-		void createDepthImage();
 		void createPointLightShadowMapViews();
 		void createFramebuffers();
-		DDing::Image depthImage;
 
 
 

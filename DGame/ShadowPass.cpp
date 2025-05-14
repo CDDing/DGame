@@ -3,7 +3,6 @@
 #include "Light.h"
 #include "Transform.h"
 vk::Format DDing::ShadowPass::DepthFormat = vk::Format::eD32Sfloat;
-vk::Format DDing::ShadowPass::SampleFormat = vk::Format::eR32Sfloat;
 
 DDing::ShadowPass::ShadowPass()
 {
@@ -12,7 +11,6 @@ DDing::ShadowPass::ShadowPass()
 	InitRenderPass();
 	InitPipeline();
 	createOutputImages();
-	createDepthImage();
 	createPointLightShadowMapViews();
 
 	createFramebuffers();
@@ -24,51 +22,38 @@ DDing::ShadowPass::~ShadowPass()
 
 void DDing::ShadowPass::InitRenderPass()
 {
-	vk::AttachmentDescription colorAttachment{};
-	colorAttachment.format = DDing::ShadowPass::SampleFormat;
-	colorAttachment.samples = vk::SampleCountFlagBits::e1;
-	colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-	colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-	colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-	colorAttachment.initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	colorAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-
+	
 
 	vk::AttachmentDescription depthAttachment{};
 	depthAttachment.format = DDing::ShadowPass::DepthFormat;
 	depthAttachment.samples = vk::SampleCountFlagBits::e1;
 	depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+	depthAttachment.storeOp = vk::AttachmentStoreOp::eStore;
 	depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
 	depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-	depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
-	depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+	depthAttachment.initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	depthAttachment.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-	vk::AttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
+	
 	vk::AttachmentReference depthAttachmentRef{};
-	depthAttachmentRef.attachment = 1;
+	depthAttachmentRef.attachment = 0;
 	depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
-	std::vector<vk::AttachmentReference> colorAttachments{ colorAttachmentRef };
-
+	
 	vk::SubpassDescription subpass{};
 	subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-	subpass.setColorAttachments(colorAttachments);
+	subpass.setColorAttachments({});
 	subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 	vk::SubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependency.dstSubpass = 0;
-	dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
+	dependency.srcStageMask = vk::PipelineStageFlagBits::eEarlyFragmentTests;
 	dependency.srcAccessMask = {};
-	dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
-	dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+	dependency.dstStageMask = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+	dependency.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 
-	std::vector<vk::AttachmentDescription> attachments = { colorAttachment, depthAttachment };
+	std::vector<vk::AttachmentDescription> attachments = { depthAttachment };
 	vk::RenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.setAttachments(attachments);
 	renderPassInfo.setSubpasses(subpass);
@@ -91,17 +76,17 @@ void DDing::ShadowPass::InitPipeline()
 	vertStage.setPName("main");
 	vertStage.setStage(vk::ShaderStageFlagBits::eVertex);
 
-	auto fragShaderCode = loadShader("Shaders/DepthOnly.frag.spv");
-	vk::ShaderModuleCreateInfo fragCreateInfo{};
-	fragCreateInfo.setCode(fragShaderCode);
-	vk::raii::ShaderModule fragShaderModule = DGame->context.logical.createShaderModule(fragCreateInfo);
-	vk::PipelineShaderStageCreateInfo fragStage{};
-	fragStage.setModule(*fragShaderModule);
-	fragStage.setPName("main");
-	fragStage.setStage(vk::ShaderStageFlagBits::eFragment);
+	//auto fragShaderCode = loadShader("Shaders/DepthOnly.frag.spv");
+	//vk::ShaderModuleCreateInfo fragCreateInfo{};
+	//fragCreateInfo.setCode(fragShaderCode);
+	//vk::raii::ShaderModule fragShaderModule = DGame->context.logical.createShaderModule(fragCreateInfo);
+	//vk::PipelineShaderStageCreateInfo fragStage{};
+	//fragStage.setModule(*fragShaderModule);
+	//fragStage.setPName("main");
+	//fragStage.setStage(vk::ShaderStageFlagBits::eFragment);
 
 
-	std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertStage, fragStage };
+	std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = { vertStage };
 	pipelineDesc.shaderStages = shaderStages;
 
 
@@ -161,23 +146,10 @@ void DDing::ShadowPass::InitPipeline()
 
 
 
-	vk::PipelineColorBlendAttachmentState colorBlendAttachment{};
-	colorBlendAttachment.setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-	colorBlendAttachment.setBlendEnable(vk::False);
-	colorBlendAttachment.setSrcColorBlendFactor(vk::BlendFactor::eOne);
-	colorBlendAttachment.setDstColorBlendFactor(vk::BlendFactor::eZero);
-	colorBlendAttachment.setColorBlendOp(vk::BlendOp::eAdd);
-	colorBlendAttachment.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
-	colorBlendAttachment.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
-	colorBlendAttachment.setAlphaBlendOp(vk::BlendOp::eAdd);
-
-	
-	std::vector<vk::PipelineColorBlendAttachmentState> attachments{ colorBlendAttachment };
-
 	vk::PipelineColorBlendStateCreateInfo colorBlending{};
 	colorBlending.setLogicOpEnable(vk::False);
 	colorBlending.setLogicOp(vk::LogicOp::eCopy);
-	colorBlending.setAttachments(attachments);
+	colorBlending.setAttachments({});
 	colorBlending.setBlendConstants({ 0 });
 	pipelineDesc.colorBlend = colorBlending;
 
@@ -333,15 +305,14 @@ void DDing::ShadowPass::Render(vk::CommandBuffer commandBuffer)
 			case LightType::eDirectional:
 			{
 
-				vk::ClearValue clearValues[2];
-				clearValues[0].color = vk::ClearColorValue{ 999.0f, 0.0f, 0.0f, 1.0f };
-				clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+				vk::ClearValue clearValue;
+				clearValue.depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
 				vk::RenderPassBeginInfo renderPassBeginInfo{};
 				renderPassBeginInfo.setRenderPass(renderPass);
 				renderPassBeginInfo.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(GetLength(), GetLength())));
 				renderPassBeginInfo.setFramebuffer(*frameData.shadowMapFramebuffers[lightCnt]);
-				renderPassBeginInfo.setClearValues(clearValues);
+				renderPassBeginInfo.setClearValues(clearValue);
 
 				commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
@@ -368,15 +339,14 @@ void DDing::ShadowPass::Render(vk::CommandBuffer commandBuffer)
 
 					auto idx = lightCnt * 6 + faceIndex;
 
-					vk::ClearValue clearValues[2];
-					clearValues[0].color = vk::ClearColorValue{ 999.0f, 0.0f, 0.0f, 1.0f };
-					clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+					vk::ClearValue clearValue;
+					clearValue.depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
 					vk::RenderPassBeginInfo renderPassBeginInfo{};
 					renderPassBeginInfo.setRenderPass(renderPass);
 					renderPassBeginInfo.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(GetLength(), GetLength())));
 					renderPassBeginInfo.setFramebuffer(*frameData.shadowCubeMapFramebuffers[idx]);
-					renderPassBeginInfo.setClearValues(clearValues);
+					renderPassBeginInfo.setClearValues(clearValue);
 
 					commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
@@ -404,15 +374,14 @@ void DDing::ShadowPass::Render(vk::CommandBuffer commandBuffer)
 			{
 				auto idx = lightCnt;
 
-				vk::ClearValue clearValues[2];
-				clearValues[0].color = vk::ClearColorValue{ 999.0f, 0.0f, 0.0f, 1.0f };
-				clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+				vk::ClearValue clearValue;
+				clearValue.depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
 				vk::RenderPassBeginInfo renderPassBeginInfo{};
 				renderPassBeginInfo.setRenderPass(renderPass);
 				renderPassBeginInfo.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(GetLength(), GetLength())));
 				renderPassBeginInfo.setFramebuffer(*frameData.shadowMapFramebuffers[idx]);
-				renderPassBeginInfo.setClearValues(clearValues);
+				renderPassBeginInfo.setClearValues(clearValue);
 
 				commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
@@ -432,6 +401,7 @@ void DDing::ShadowPass::Render(vk::CommandBuffer commandBuffer)
 				break;
 			}
 			}
+			lightCnt++;
 
 		}
 	}
@@ -464,10 +434,10 @@ void DDing::ShadowPass::createOutputImages()
 			imageInfo.setArrayLayers(1);
 			imageInfo.setTiling(vk::ImageTiling::eOptimal);
 			imageInfo.setInitialLayout(vk::ImageLayout::eUndefined);
-			imageInfo.setUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled);
+			imageInfo.setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled);
 			imageInfo.setSamples(vk::SampleCountFlagBits::e1);
 			imageInfo.setSharingMode(vk::SharingMode::eExclusive);
-			imageInfo.setFormat(SampleFormat);
+			imageInfo.setFormat(DepthFormat);
 
 			VmaAllocationCreateInfo allocInfo{};
 			allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
@@ -475,8 +445,8 @@ void DDing::ShadowPass::createOutputImages()
 			allocInfo.priority = 1.0f;
 
 			vk::ImageViewCreateInfo imageViewInfo{};
-			imageViewInfo.setFormat(SampleFormat);
-			imageViewInfo.setSubresourceRange(vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eColor,0,1,0,1 });
+			imageViewInfo.setFormat(DepthFormat);
+			imageViewInfo.setSubresourceRange(vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eDepth,0,1,0,1 });
 			imageViewInfo.setViewType(vk::ImageViewType::e2D);
 
 			outputImages.push_back(DDing::Image(imageInfo, allocInfo, imageViewInfo));
@@ -496,11 +466,11 @@ void DDing::ShadowPass::createOutputImages()
 			imageInfo.setArrayLayers(6);
 			imageInfo.setTiling(vk::ImageTiling::eOptimal);
 			imageInfo.setInitialLayout(vk::ImageLayout::eUndefined);
-			imageInfo.setUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled);
+			imageInfo.setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled);
 			imageInfo.setSamples(vk::SampleCountFlagBits::e1);
 			imageInfo.setSharingMode(vk::SharingMode::eExclusive);
 			imageInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible);
-			imageInfo.setFormat(SampleFormat);
+			imageInfo.setFormat(DepthFormat);
 
 			VmaAllocationCreateInfo allocInfo{};
 			allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
@@ -508,8 +478,8 @@ void DDing::ShadowPass::createOutputImages()
 			allocInfo.priority = 1.0f;
 
 			vk::ImageViewCreateInfo imageViewInfo{};
-			imageViewInfo.setFormat(SampleFormat);
-			imageViewInfo.setSubresourceRange(vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eColor,0,1,0,6 });
+			imageViewInfo.setFormat(DepthFormat);
+			imageViewInfo.setSubresourceRange(vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eDepth,0,1,0,6 });
 			imageViewInfo.setViewType(vk::ImageViewType::eCube);
 
 			outputImages.push_back(DDing::Image(imageInfo, allocInfo, imageViewInfo));
@@ -547,13 +517,16 @@ void DDing::ShadowPass::SetBuffer(vk::CommandBuffer commandBuffer)
 			{
 				buffer.lightPosition = transform->GetWorldPosition();
 
-				float length = GetLength();
+				float length = 1.0f;//GetLength();
 				length /= 2;
 				buffer.projection = glm::orthoLH(-length, length, -length, length, 0.1f, 100.f);
 				buffer.projection[1][1] *= -1;
 
 				auto upVector = (transform->GetLook() == glm::vec3(0, 1, 0)) ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
-				buffer.view = glm::lookAtLH(transform->GetWorldPosition(), transform->GetWorldPosition() + transform->GetLook(), upVector);
+				
+				//Temp
+				glm::vec3 lightPosition = transform->GetWorldPosition() - transform->GetLook() * 1.0f;
+				buffer.view = glm::lookAtLH(lightPosition, lightPosition + transform->GetLook(), upVector);
 				memcpy((char*)mappedData + offsetof(TotalShadowBuffer, directional) + lightCnt * sizeof(ShadowBuffer), &buffer, sizeof(ShadowBuffer));
 
 				break;
@@ -595,7 +568,7 @@ void DDing::ShadowPass::SetBuffer(vk::CommandBuffer commandBuffer)
 			{
 				buffer.lightPosition = transform->GetWorldPosition();
 
-				float fov = glm::radians(lightComponent->outerCone);
+				float fov = 2 * glm::radians(lightComponent->outerCone);
 				buffer.projection = glm::perspectiveFovLH(fov, static_cast<float>(GetLength()), static_cast<float>(GetLength()), 0.1f, 100.0f);
 				buffer.projection[1][1] *= -1;
 
@@ -607,6 +580,7 @@ void DDing::ShadowPass::SetBuffer(vk::CommandBuffer commandBuffer)
 				break;
 			}
 			}
+			lightCnt++;
 		}
 	}
 
@@ -621,32 +595,6 @@ void DDing::ShadowPass::SetBuffer(vk::CommandBuffer commandBuffer)
 }
 
 
-void DDing::ShadowPass::createDepthImage()
-{
-	vk::ImageCreateInfo imageInfo{};
-	imageInfo.setArrayLayers(1);
-	imageInfo.setExtent({ GetLength(), GetLength(), 1});
-	imageInfo.setFormat(DDing::ShadowPass::DepthFormat);
-	imageInfo.setImageType(vk::ImageType::e2D);
-	imageInfo.setMipLevels(1);
-	imageInfo.setSamples(vk::SampleCountFlagBits::e1);
-	imageInfo.setTiling(vk::ImageTiling::eOptimal);
-	imageInfo.setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment);
-	imageInfo.setInitialLayout(vk::ImageLayout::eUndefined);
-	imageInfo.setSharingMode(vk::SharingMode::eExclusive);
-
-	vk::ImageViewCreateInfo imageViewInfo{};
-	imageViewInfo.setFormat(imageInfo.format);
-	imageViewInfo.setViewType(vk::ImageViewType::e2D);
-	imageViewInfo.setSubresourceRange({ vk::ImageAspectFlagBits::eDepth, 0, imageInfo.mipLevels, 0, 1 });
-
-	VmaAllocationCreateInfo allocCreateInfo = {};
-	allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-	allocCreateInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-	allocCreateInfo.priority = 1.0f;
-
-	depthImage = DDing::Image(imageInfo, allocCreateInfo, imageViewInfo);
-}
 
 void DDing::ShadowPass::createPointLightShadowMapViews()
 {
@@ -659,8 +607,8 @@ void DDing::ShadowPass::createPointLightShadowMapViews()
 			for (int j = 0; j < 6; j++) {
 				vk::ImageViewCreateInfo imageViewInfo{};
 				imageViewInfo.setViewType(vk::ImageViewType::e2D);
-				imageViewInfo.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, j, 1));
-				imageViewInfo.setFormat(SampleFormat);
+				imageViewInfo.setSubresourceRange(vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, j, 1));
+				imageViewInfo.setFormat(DepthFormat);
 				//3 means light types cnt
 				imageViewInfo.setImage(outputImages[frameCnt * MAX_LIGHTS * 2 + MAX_LIGHTS + i ].image);
 
@@ -680,9 +628,8 @@ void DDing::ShadowPass::createFramebuffers()
 			//ShadowCubemaps : Point Light
 			{
 				for (int j = 0; j < 6; j++) {
-					std::array<vk::ImageView, 2> attachments = {
+					std::array<vk::ImageView, 1> attachments = {
 						*frameData.pointLightShadowMapViews[i][j],
-						depthImage.imageView,
 					};
 					vk::FramebufferCreateInfo framebufferInfo{};
 					framebufferInfo.setRenderPass(renderPass);
@@ -699,9 +646,8 @@ void DDing::ShadowPass::createFramebuffers()
 
 			//ShadowMaps : Directional, Spot
 			{
-				std::array<vk::ImageView, 2> attachments = {
-					outputImages[frameCnt * MAX_LIGHTS * 2 + i].imageView,
-					depthImage.imageView,
+				std::array<vk::ImageView, 1> attachments = {
+					outputImages[frameCnt * MAX_LIGHTS * 2 + i].imageView
 				};
 				vk::FramebufferCreateInfo framebufferInfo{};
 				framebufferInfo.setRenderPass(renderPass);

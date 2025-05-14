@@ -71,6 +71,18 @@ layout(location = 1) out vec4 outDepth;
 
 const float PI = 3.14159265359;
 
+int DetermineFaceFromDirection(vec3 dir)
+{
+    vec3 absDir = abs(dir);
+    
+    if (absDir.x > absDir.y && absDir.x > absDir.z) {
+        return dir.x > 0.0 ? 0 : 1; // 0: +X, 1: -X
+    } else if (absDir.y > absDir.z) {
+        return dir.y > 0.0 ? 2 : 3; // 2: +Y, 3: -Y
+    } else {
+        return dir.z > 0.0 ? 4 : 5; // 4: +Z, 5: -Z
+    }
+}
 float Shadow(sampler2D shadowMap, mat4 lightViewProjection) {
     vec4 lightSpacePosition = lightViewProjection * vec4(inWorldPos, 1.0);
     vec3 shadowCoord = lightSpacePosition.xyz / lightSpacePosition.w;
@@ -87,11 +99,17 @@ float Shadow(sampler2D shadowMap, mat4 lightViewProjection) {
     float shadow = currentDepth - bias > closestDepth ? 0.0 : 1.0;
     return shadow;
 }
-float ShadowCubeMap(samplerCube shadowMap, Light light){
+float ShadowCubeMap(samplerCube shadowMap, Light light, int lightCnt){
     vec3 lightDir = inWorldPos - light.position;
     
+    int index = DetermineFaceFromDirection(lightDir);
+
+    mat4 lightViewProjection = lightMatrix.point[lightCnt][index].projection * lightMatrix.point[lightCnt][index].view;
+
+    vec4 lightSpacePosition = lightViewProjection * vec4(inWorldPos, 1.0);
+    float currentDepth = lightSpacePosition.z / lightSpacePosition.w;
+
     float closestDepth = texture(shadowMap, normalize(lightDir)).r;
-    float currentDepth = length(lightDir);
 
     float bias = 0.0005;
 
@@ -218,9 +236,8 @@ void main() {
             attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));
         
             
-            //mat4 lightViewProjection = lightMatrix.point[i].projection * lightMatrix.point[i].view;
-
-            attenuation *= ShadowCubeMap(shadowCubeMaps[i], light);
+            
+            attenuation *= ShadowCubeMap(shadowCubeMaps[i], light, i);
         }
         else if(light.type == 2) //spot
         {
@@ -237,7 +254,8 @@ void main() {
             
             mat4 lightViewProjection = lightMatrix.spot[i].projection * lightMatrix.spot[i].view;
             float currentDepth = length(inWorldPos - light.position);
-            //attenuation *= Shadow(shadowMaps[i], lightViewProjection);
+            
+            attenuation *= Shadow(shadowMaps[i], lightViewProjection);
 
         }
 

@@ -160,7 +160,7 @@ void* DDing::Buffer::GetMappedPtr() {
 void DDing::Image::setImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout newLayout)
 {
     vk::ImageAspectFlags aspectMask;
-    if (newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
+    if (format == vk::Format::eD32Sfloat/*newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal*/)
     {
         aspectMask = vk::ImageAspectFlagBits::eDepth;
         if (format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint)
