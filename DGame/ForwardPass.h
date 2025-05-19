@@ -36,18 +36,20 @@ namespace DDing {
 		vk::raii::DescriptorSet bindlessSet = nullptr;
 		vk::raii::DescriptorSetLayout bindlessSetLayout = nullptr;
 
+		std::vector<vk::raii::Framebuffer> framebuffers;
+
 		//FrameData
 		std::vector<ForwardFrameData> frameDatas;
 
 		//Depth Image
 		DDing::Image depthImage;
 
-		//Depth Image For GUI
+		//For GUI
 		std::vector<VkDescriptorSet> depthImageDescriptorSet;
 		std::vector<DDing::Image> depthImageGUI;
+		int enablePCF = false;
 
-		std::vector<vk::raii::Framebuffer> framebuffers;
-
+		
 
 	};
 }

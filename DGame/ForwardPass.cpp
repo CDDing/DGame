@@ -439,6 +439,11 @@ void DDing::ForwardPass::DrawUI()
 {
 	int currentFrame = DGame->render.currentFrame;
 	if (ImGui::CollapsingHeader("ForwardPass")) {
+		bool pcfEnabled = (enablePCF != 0);
+		if (ImGui::Checkbox("Enable PCF", &pcfEnabled)) {
+			enablePCF = pcfEnabled ? 1 : 0;
+		}
+
 		ImGui::Text("Depth Image");
 		ImGui::Image((ImTextureID)depthImageDescriptorSet[currentFrame], ImVec2(DGame->swapChain.extent.width * 0.3, DGame->swapChain.extent.height * 0.3));
 
@@ -474,6 +479,7 @@ void DDing::ForwardPass::SetBuffer(vk::CommandBuffer commandBuffer)
 
 	memcpy((char*)mappedData + offsetof(GlobalBuffer, lights), lights, sizeof(sLight) * 10);
 	memcpy((char*)mappedData + offsetof(GlobalBuffer, numLights), &cnt, sizeof(int));
+	memcpy((char*)mappedData + offsetof(GlobalBuffer, enablePCF), &enablePCF, sizeof(int));
 
 	VkBufferCopy copyRegion{};
 	copyRegion.dstOffset = 0;

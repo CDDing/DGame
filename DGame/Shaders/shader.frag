@@ -47,6 +47,7 @@ layout(set = 0, binding = 0) uniform GlobalBuffer {
     float time;
     Light lights[10];
     uint numLights;
+    int enablePCF; // 0 = false, 1 = true
 } ubo;
 
 struct MatrixBuffer{
@@ -84,6 +85,7 @@ int DetermineFaceFromDirection(vec3 dir)
     }
 }
 float Shadow(sampler2D shadowMap, mat4 lightViewProjection) {
+   
     vec4 lightSpacePosition = lightViewProjection * vec4(inWorldPos, 1.0);
     vec3 shadowCoord = lightSpacePosition.xyz / lightSpacePosition.w;
 
@@ -97,6 +99,28 @@ float Shadow(sampler2D shadowMap, mat4 lightViewProjection) {
     float currentDepth = shadowCoord.z;
 
     float shadow = currentDepth - bias > closestDepth ? 0.0 : 1.0;
+    if(ubo.enablePCF == 1){
+        vec2 texelSize = 1.0 / textureSize(shadowMap,0);
+        float sampleCnt = 0;
+        shadow = 0;
+        for(int x = -1; x<= 1; ++x){
+            for(int y = -1; y<=1; ++y){
+                vec2 offset = vec2(x,y) * texelSize;
+                vec2 sampleUV = shadowCoord.xy + offset;
+                if (sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0)
+                    continue;
+
+
+                float closestDepthPCF = texture(shadowMap, sampleUV).r;
+                shadow += currentDepth - bias > closestDepthPCF ? 0.0 : 1.0;
+                sampleCnt += 1.0;
+            }
+        }
+
+        return shadow / sampleCnt;
+    }
+
+
     return shadow;
 }
 float ShadowCubeMap(samplerCube shadowMap, Light light, int lightCnt){

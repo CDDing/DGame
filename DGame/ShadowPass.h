@@ -43,7 +43,7 @@ namespace DDing
 		std::vector<ShadowFrameData> frameDatas;
 	protected:
 		void SetBuffer(vk::CommandBuffer commandBuffer);
-		uint32_t GetLength() { return std::min(DGame->swapChain.extent.width, DGame->swapChain.extent.height); }
+		uint32_t GetLength() { return 2048;/*std::min(DGame->swapChain.extent.width, DGame->swapChain.extent.height);*/ }
 		void createPointLightShadowMapViews();
 		void createFramebuffers();
 

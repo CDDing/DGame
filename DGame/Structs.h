@@ -36,6 +36,7 @@ struct alignas(16) GlobalBuffer {
 
     sLight lights[10];
     uint32_t numLights;
+    int enablePCF;
 };
 
 namespace DDing {
